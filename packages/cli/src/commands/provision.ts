@@ -5,7 +5,7 @@ import { readClientConfig } from "../lib/clientConfig";
 import { env } from "../lib/env";
 import { run } from "../lib/exec";
 import { REPO_ROOT } from "../lib/paths";
-import { getOrCreateTenant } from "../lib/supabase";
+import { getOrCreateTenant, ensureOwnerAccount } from "../lib/supabase";
 import { ensureTwilioVoiceUrls, buildDesiredUrls } from "../lib/twilioProvision";
 import { ensureAgentConfigured } from "../lib/elevenLabsProvision";
 
@@ -47,6 +47,18 @@ export async function provisionCommand(clientId: string, options: ProvisionOptio
     } else {
       const tenantId = await getOrCreateTenant(clientId, config.businessName);
       console.log(tenantId ? `Tenant row ready (${tenantId}).` : "FAILED to read/create tenant row.");
+
+      if (tenantId) {
+        const owner = await ensureOwnerAccount(tenantId, config.ownerNotificationEmail);
+        if (owner.status === "created") {
+          console.log(`Created dashboard login for ${config.ownerNotificationEmail}. One-time password: ${owner.password}`);
+          console.log("Give this to the client and have them change it after first login - it is not stored anywhere and will not be shown again.");
+        } else if (owner.status === "already-exists") {
+          console.log(`Dashboard login for ${config.ownerNotificationEmail} already exists - no change.`);
+        } else {
+          console.log(`FAILED to create dashboard login: ${owner.reason}`);
+        }
+      }
     }
   } else {
     console.log("SKIPPED tenant row - Supabase URL/service key not set.");
