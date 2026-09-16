@@ -1,0 +1,15 @@
+name = "frontdesk-llm-gateway"
+main = "src/index.ts"
+compatibility_date = "2024-11-11"
+
+[observability]
+enabled = true
+
+# Non-secret configuration. Set via `wrangler deploy` or the dashboard.
+[vars]
+LLM_PROVIDER = "mock"
+LLM_MODEL = ""
+
+# Secrets (never in this file): set with
+#   wrangler secret put LLM_API_KEY
+#   wrangler secret put LLM_GATEWAY_SHARED_SECRET

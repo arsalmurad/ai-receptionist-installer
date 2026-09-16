@@ -1,0 +1,12 @@
+name = "frontdesk-media-gate"
+main = "src/index.ts"
+compatibility_date = "2024-11-11"
+
+[observability]
+enabled = true
+
+[vars]
+UPSTREAM_BASE_URL = ""
+
+# Secret (never in this file): set with
+#   wrangler secret put MEDIA_GATE_SIGNING_SECRET

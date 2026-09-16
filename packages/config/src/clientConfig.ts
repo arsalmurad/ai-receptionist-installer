@@ -63,6 +63,16 @@ export function parseClientConfig(clientId: string, raw: unknown): ClientConfig 
  * section 1.4 (fact degradation) and 1.5 (resolution illusion), cited in
  * docs/DESIGN_NOTES.md.
  */
+const SCOPE_INSTRUCTION = [
+  "You are the front-desk assistant for the business described below.",
+  "Answer only using the information given here. Never invent prices, availability, or booking confirmations.",
+  "If the question asks for something not covered below (an exact price when prices are not listed, a specific booking, or anything you are not told), respond with exactly the single word OUT_OF_SCOPE and nothing else.",
+].join(" ");
+
+export function buildSystemPrompt(config: ClientConfig): string {
+  return `${SCOPE_INSTRUCTION}\n\n${buildGroundingText(config)}`;
+}
+
 export function buildGroundingText(config: ClientConfig): string {
   const hoursText = config.hours
     .map((h) => `${h.day}: ${h.open && h.close ? `${h.open}-${h.close}` : "closed"}`)
