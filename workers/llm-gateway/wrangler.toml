@@ -7,8 +7,8 @@ enabled = true
 
 # Non-secret configuration. Set via `wrangler deploy` or the dashboard.
 [vars]
-LLM_PROVIDER = "mock"
-LLM_MODEL = ""
+LLM_PROVIDER = "gemini"
+LLM_MODEL = "gemini-3.6-flash"
 
 # Secrets (never in this file): set with
 #   wrangler secret put LLM_API_KEY
