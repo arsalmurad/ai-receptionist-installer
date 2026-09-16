@@ -10,6 +10,9 @@ node_modules/
 .pnp
 .pnp.js
 
+# generated at build/dev time
+apps/web/lib/client-config.generated.json
+
 # next.js
 apps/web/.next/
 apps/web/out/
