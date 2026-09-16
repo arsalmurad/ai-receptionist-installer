@@ -1,0 +1,31 @@
+{
+  "clientId": "_template",
+  "businessName": "Business Name",
+  "timezone": "America/New_York",
+  "phoneDisplay": "(555) 555-0100",
+  "hours": [
+    { "day": "mon", "open": "08:00", "close": "17:00" },
+    { "day": "tue", "open": "08:00", "close": "17:00" },
+    { "day": "wed", "open": "08:00", "close": "17:00" },
+    { "day": "thu", "open": "08:00", "close": "17:00" },
+    { "day": "fri", "open": "08:00", "close": "17:00" },
+    { "day": "sat", "open": null, "close": null },
+    { "day": "sun", "open": null, "close": null }
+  ],
+  "services": [
+    { "name": "Example service", "description": "Replace with a real service this business offers." }
+  ],
+  "serviceArea": ["Replace with real town or ZIP list"],
+  "pricesPolicy": {
+    "listedPrices": false,
+    "note": "We do not quote exact prices by chat or phone. A technician provides a firm quote on site."
+  },
+  "faq": [
+    { "question": "Do you offer free estimates?", "answer": "Replace with a real answer." }
+  ],
+  "emergencyRules": [
+    { "keyword": "emergency", "instruction": "Treat as urgent: offer the soonest available slot and collect a callback number." }
+  ],
+  "ownerNotificationEmail": "owner@example.com",
+  "disclosureVersion": "v1"
+}

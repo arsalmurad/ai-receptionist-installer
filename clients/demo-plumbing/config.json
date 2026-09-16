@@ -1,0 +1,41 @@
+{
+  "clientId": "demo-plumbing",
+  "businessName": "Demo Plumbing Co",
+  "timezone": "America/New_York",
+  "phoneDisplay": "(555) 010-2200",
+  "hours": [
+    { "day": "mon", "open": "07:00", "close": "18:00" },
+    { "day": "tue", "open": "07:00", "close": "18:00" },
+    { "day": "wed", "open": "07:00", "close": "18:00" },
+    { "day": "thu", "open": "07:00", "close": "18:00" },
+    { "day": "fri", "open": "07:00", "close": "18:00" },
+    { "day": "sat", "open": "09:00", "close": "14:00" },
+    { "day": "sun", "open": null, "close": null }
+  ],
+  "services": [
+    { "name": "Drain cleaning", "description": "Clearing clogged sinks, tubs, and main lines." },
+    { "name": "Water heater repair and replacement", "description": "Tank and tankless units, gas and electric." },
+    { "name": "Leak detection and repair", "description": "Slab leaks, pipe leaks, and fixture leaks." },
+    { "name": "General plumbing repair", "description": "Faucets, toilets, garbage disposals, and fixture installs." }
+  ],
+  "serviceArea": ["Fairview", "Millbrook", "Cedar Falls", "Northgate"],
+  "pricesPolicy": {
+    "listedPrices": false,
+    "note": "We do not quote exact prices by chat or phone. A technician gives a firm, written quote on site before any work starts."
+  },
+  "faq": [
+    { "question": "Do you offer free estimates?", "answer": "Yes, estimates for non-emergency work are free and are given on site before work starts." },
+    { "question": "Are you licensed and insured?", "answer": "Yes, we are fully licensed and insured in our service area." },
+    { "question": "Do you offer emergency service?", "answer": "Yes, we offer emergency service for active leaks, burst pipes, and no-water situations. Call our main line any time." },
+    { "question": "What forms of payment do you accept?", "answer": "We accept all major credit cards, debit cards, and checks." },
+    { "question": "Do you work on weekends?", "answer": "We have limited Saturday hours from 9am to 2pm. We are closed Sundays." }
+  ],
+  "emergencyRules": [
+    { "keyword": "burst pipe", "instruction": "Treat as an active emergency. Advise the caller to shut off the main water valve if they know where it is, then offer the soonest available slot and collect a callback number." },
+    { "keyword": "flooding", "instruction": "Treat as an active emergency. Advise the caller to shut off the main water valve if they know where it is, then offer the soonest available slot and collect a callback number." },
+    { "keyword": "no water", "instruction": "Ask whether it affects the whole house or one fixture, then offer the soonest available slot." },
+    { "keyword": "gas smell", "instruction": "This is outside plumbing scope and can be dangerous. Tell the caller to leave the property and call their gas utility or 911 immediately. Do not attempt to schedule a plumbing visit for this." }
+  ],
+  "ownerNotificationEmail": "arsalmurad234@gmail.com",
+  "disclosureVersion": "v1"
+}
