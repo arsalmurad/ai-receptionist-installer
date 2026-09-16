@@ -72,7 +72,13 @@ export async function provisionCommand(clientId: string, options: ProvisionOptio
         console.log(`Would set ${name} on Vercel (production).`);
         continue;
       }
-      const result = run("vercel", ["env", "add", name, "production", "--force"], { input: value });
+      // --no-sensitive: Vercel defaults production env vars to "sensitive",
+      // which `vercel pull`/`vercel build` cannot read back (they come back
+      // as "[SENSITIVE]" placeholders). That breaks the vercel
+      // pull -> build -> deploy --prebuilt flow this project's CI uses, so
+      // these are stored as ordinary encrypted env vars instead - see
+      // docs/DESIGN_NOTES.md.
+      const result = run("vercel", ["env", "add", name, "production", "--force", "--no-sensitive"], { input: value });
       console.log(result.status === 0 ? `Set ${name}.` : `FAILED to set ${name}: ${result.stderr.trim().slice(0, 200)}`);
     }
   }
