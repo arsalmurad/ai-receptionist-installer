@@ -6,7 +6,7 @@
     "dev": "tsx scripts/with-root-env.ts \"tsx scripts/generate-client-config.ts && next dev\"",
     "build": "tsx scripts/with-root-env.ts \"tsx scripts/generate-client-config.ts && next build\"",
     "start": "tsx scripts/with-root-env.ts \"next start\"",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsx scripts/with-root-env.ts \"tsx scripts/generate-client-config.ts && tsc --noEmit -p tsconfig.json\""
   },
   "dependencies": {
     "@frontdesk-kit/config": "*",
