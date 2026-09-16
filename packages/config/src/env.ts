@@ -70,11 +70,14 @@ export class EnvValidationError extends Error {
 }
 
 /**
- * Validates process.env (or a supplied source) against the full app env
- * contract. Throws EnvValidationError with every missing/invalid var listed
- * at once, so a build fails loudly instead of one var at a time.
+ * Validates an env source (normally process.env, passed explicitly by the
+ * caller) against the full app env contract. Throws EnvValidationError with
+ * every missing/invalid var listed at once, so a build fails loudly instead
+ * of one var at a time. Takes no default so this file has no Node-specific
+ * globals - it is imported (via @frontdesk-kit/config) from the Cloudflare
+ * Workers too, which typecheck without Node's ambient types.
  */
-export function loadAppEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
+export function loadAppEnv(source: Record<string, string | undefined>): AppEnv {
   const result = appEnvSchema.safeParse(source);
   if (!result.success) {
     throw new EnvValidationError(result.error.issues);

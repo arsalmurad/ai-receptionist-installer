@@ -17,8 +17,7 @@ function toBase64(buffer: ArrayBuffer): string {
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);
   }
-  if (typeof btoa === "function") return btoa(binary);
-  return Buffer.from(binary, "binary").toString("base64");
+  return btoa(binary);
 }
 
 function constantTimeEqual(a: string, b: string): boolean {

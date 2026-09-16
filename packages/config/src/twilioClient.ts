@@ -9,10 +9,7 @@
 const BASE_URL = "https://api.twilio.com/2010-04-01";
 
 function authHeader(accountSid: string, authToken: string): string {
-  const encoded = typeof btoa === "function"
-    ? btoa(`${accountSid}:${authToken}`)
-    : Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-  return `Basic ${encoded}`;
+  return `Basic ${btoa(`${accountSid}:${authToken}`)}`;
 }
 
 export interface IncomingPhoneNumber {

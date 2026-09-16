@@ -4,7 +4,7 @@ let cached: ReturnType<typeof loadAppEnv> | undefined;
 
 export function getEnv() {
   if (!cached) {
-    cached = loadAppEnv();
+    cached = loadAppEnv(process.env);
   }
   return cached;
 }

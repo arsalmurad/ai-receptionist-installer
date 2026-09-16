@@ -5,12 +5,8 @@ import { loadAppEnv } from "@frontdesk-kit/config";
 // once, instead of failing later with an opaque runtime error. Optional
 // integration vars (Twilio, ElevenLabs, Resend) are not required here - see
 // packages/config/src/env.ts.
-loadAppEnv();
+loadAppEnv(process.env);
 
-const nextConfig: NextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
