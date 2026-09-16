@@ -67,10 +67,9 @@ export async function doctorCommand(clientId: string, options: DoctorOptions): P
     }
   }
 
-  const webDir = resolve(REPO_ROOT, "apps/web");
-  if (existsSync(resolve(webDir, ".vercel/project.json"))) {
+  if (existsSync(resolve(REPO_ROOT, ".vercel/project.json"))) {
     checked.push("Vercel env vars present");
-    const list = run("vercel", ["env", "ls", "production"], { cwd: webDir });
+    const list = run("vercel", ["env", "ls", "production"]);
     const requiredNames = ENV_VAR_SPECS.filter((s) => s.required).map((s) => s.name);
     for (const name of requiredNames) {
       if (!list.stdout.includes(name)) {

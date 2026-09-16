@@ -54,10 +54,12 @@ export async function provisionCommand(clientId: string, options: ProvisionOptio
 
   // Step 2: Vercel env vars
   step(2, "Vercel environment variables");
-  const webDir = resolve(REPO_ROOT, "apps/web");
-  const linked = existsSync(resolve(webDir, ".vercel/project.json"));
+  // Per Vercel's monorepo docs, the project is linked from the repo root
+  // (its Root Directory setting points at apps/web), so .vercel/project.json
+  // lives at the repo root, not inside apps/web.
+  const linked = existsSync(resolve(REPO_ROOT, ".vercel/project.json"));
   if (!linked) {
-    console.log("SKIPPED - apps/web is not linked to a Vercel project. Run `vercel link` in apps/web first.");
+    console.log("SKIPPED - not linked to a Vercel project. Run `vercel link` from the repo root first.");
   } else {
     const values: Record<string, string> = { CLIENT_ID: clientId };
     for (const spec of ENV_VAR_SPECS) {
@@ -70,7 +72,7 @@ export async function provisionCommand(clientId: string, options: ProvisionOptio
         console.log(`Would set ${name} on Vercel (production).`);
         continue;
       }
-      const result = run("vercel", ["env", "add", name, "production", "--force"], { input: value, cwd: webDir });
+      const result = run("vercel", ["env", "add", name, "production", "--force"], { input: value });
       console.log(result.status === 0 ? `Set ${name}.` : `FAILED to set ${name}: ${result.stderr.trim().slice(0, 200)}`);
     }
   }
