@@ -41,5 +41,7 @@ export async function POST(request: Request): Promise<Response> {
     await notifyOwnerOfCall({ fromNumber: params.From ?? null, status: callStatus });
   }
 
-  return new Response("", { status: 204 });
+  // A 204 response must have a null body - even an empty string throws
+  // ("Response constructor: Invalid response status code 204").
+  return new Response(null, { status: 204 });
 }
