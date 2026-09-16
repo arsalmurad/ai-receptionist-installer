@@ -1,0 +1,49 @@
+# secrets - never commit
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+apps/web/.next/
+apps/web/out/
+.next/
+out/
+
+# build output
+dist/
+build/
+*.tsbuildinfo
+
+# vercel
+.vercel
+
+# wrangler
+.wrangler/
+workers/*/.dev.vars
+
+# supabase local
+supabase/.branches
+supabase/.temp
+
+# logs
+npm-debug.log*
+*.log
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# test/coverage
+coverage/
