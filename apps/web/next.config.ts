@@ -7,6 +7,8 @@ import { loadAppEnv } from "@frontdesk-kit/config";
 // packages/config/src/env.ts.
 loadAppEnv(process.env);
 
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  agentRules: false,
+};
 
 export default nextConfig;

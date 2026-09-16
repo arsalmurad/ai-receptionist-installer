@@ -107,6 +107,19 @@ step is idempotent in effect (the end state is always correct) even though
 it cannot literally skip a no-op write the way the Twilio and ElevenLabs
 steps do.
 
+## A known local-only quirk
+
+`scripts/simulate-call.ts`'s localhost leg signs requests against the
+literal URL it POSTs to (`http://127.0.0.1:3000/...`), which matches
+production exactly (both gate 4 and the deployed simulate-call leg pass
+cleanly). Against a local `next dev` server, though, the signed request
+comes back 403 - `request.url` inside the route handler does not always
+match the literal host the client connected on in dev mode. This has not
+been root-caused further since the deployed target is what actually matters
+and is fully green; treat the deployed leg's result as authoritative and the
+localhost leg as a convenience that may need `NEXT_PUBLIC_SITE_URL`-style
+host alignment to work reliably in dev.
+
 ## Other decisions
 
 **One shared Supabase project, one Vercel project per client.** Tenant

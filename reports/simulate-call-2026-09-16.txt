@@ -1,0 +1,22 @@
+$ npx tsx scripts/simulate-call.ts --url https://frontdesk-kit-rho.vercel.app --client demo-plumbing
+
+=== localhost (http://127.0.0.1:3000) ===
+SKIPPED - nothing listening on localhost:3000. Run "npm run dev -w apps/web" first to include this target.
+
+Note: when a local dev server is running, the localhost leg's signed
+requests currently fail signature verification, apparently because
+Next.js dev's request.url does not always match the literal host the
+client connected to. The deployed leg below is unaffected and is the
+authoritative result - see docs/DESIGN_NOTES.md.
+
+=== deployed (https://frontdesk-kit-rho.vercel.app) ===
+[PASS] unsigned request rejected - status=403
+[PASS] tampered signature rejected - status=403
+[PASS] valid signature accepted (200) - status=200
+[PASS] response is TwiML - <?xml version="1.0" encoding="UTF-8"?><Response><Say>Hi, thanks for calling Demo Plumbing Co. I am their AI receptionist
+[PASS] response contains the AI disclosure line - looked for 'recorded line'
+[PASS] response includes an agent handoff or fallback (Connect/Dial/Say/Record) - looked for <Connect>, <Dial>, or <Record
+[PASS] consent row written - disclosure_version=v1
+[PASS] call_log row written - status=ringing
+[PASS] status-callback accepted - status=204
+[PASS] call_log status updated to completed - status=completed

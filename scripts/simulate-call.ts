@@ -10,7 +10,7 @@ import { computeTwilioSignature, TWILIO_SIGNATURE_HEADER } from "@frontdesk-kit/
  * calling the real Twilio API - see README "no Twilio account".
  *
  * Usage: npm run simulate-call -- --url https://your-deploy.vercel.app [--client demo-plumbing]
- * Also always tries http://localhost:3000 first, and skips it quietly if
+ * Also always tries http://127.0.0.1:3000 first, and skips it quietly if
  * nothing is listening there.
  */
 
@@ -38,7 +38,7 @@ const clientId = arg("client") ?? process.env.CLIENT_ID ?? "demo-plumbing";
 const deployedUrl = arg("url") ?? process.env.NEXT_PUBLIC_SITE_URL;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 
-async function isReachable(url: string, timeoutMs = 1500): Promise<boolean> {
+async function isReachable(url: string, timeoutMs = 3000): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -161,7 +161,7 @@ function printResults(label: string, results: CheckResult[]): boolean {
 async function main() {
   let overallPass = true;
 
-  const localUrl = "http://localhost:3000";
+  const localUrl = "http://127.0.0.1:3000";
   if (await isReachable(localUrl)) {
     const results = await simulateAgainst(localUrl);
     overallPass = printResults(`localhost (${localUrl})`, results) && overallPass;
