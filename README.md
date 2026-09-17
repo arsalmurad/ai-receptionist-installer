@@ -15,10 +15,22 @@ Small businesses miss calls and website questions after hours. An AI receptionis
 ## Try it in 2 minutes
 
 - Website: https://ai-receptionist-installer.vercel.app
-- Ask the chat a question about hours or services.
+- Ask the chat a question about hours or services. (This runs on Gemini's free tier, which caps out at 20 questions a day across every visitor. If it says it's reached today's limit, that's real, not a bug - try again tomorrow.)
 - Ask it a price it doesn't list. It won't guess. It takes your details instead so someone can follow up.
 - Try "Talk to the receptionist" to speak with the same AI agent in your browser, no phone call needed.
 - Dashboard (leads, chats, calls): login available on request.
+
+The chat declining to guess a price and taking details instead:
+
+![The chat assistant declining to quote an exact price, offering to take the visitor's details instead](docs/img/chat-price-decline.jpg)
+
+The owner dashboard:
+
+![The owner dashboard showing the latest install report, leads, chat sessions, and call logs](docs/img/dashboard.jpg)
+
+A `frontdesk verify` run, visible on the dashboard:
+
+![A verify run's PASS/SKIPPED table for gates 5 through 12, shown on the dashboard](docs/img/verify-run.jpg)
 
 ## What a business gets
 
@@ -63,11 +75,13 @@ GATE                   STATUS   REASON
 8 secrets server-only  PASS     scanned .next/static, no server-only names or values found
 9 RLS isolation        PASS     tenant A user could not read tenant B rows
 10 media-gate          PASS     unsigned and expired both rejected, valid signature accepted
-11 llm-gateway auth    PASS     401 without shared secret, 200 with it
+11 llm-gateway auth    PASS     401 without shared secret, 502 with it (not 401, so the secret was accepted)
 12 rate limits         PASS     got 429 within 11 messages sent from one client (CHAT_RATE_LIMIT_PER_IP=10)
 
 Overall: PASS
 ```
+
+Gate 11's 502 above is honest, not a mistake: it means the shared secret was accepted (a wrong secret gets 401) and the request reached the LLM provider, which happened to be over its free-tier quota from all the testing on this page. The gate is checking authentication, not the provider's uptime, so that still counts as a pass - see `docs/DESIGN_NOTES.md`.
 
 Full report: `reports/demo-plumbing-2026-09-17.md`. The phone webhook simulator's output against the same install: `reports/simulate-call-2026-09-17.txt`.
 
