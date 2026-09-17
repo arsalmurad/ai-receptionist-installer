@@ -1,6 +1,31 @@
 # AI Receptionist Installer
 
-This sets up an AI chat assistant and phone receptionist for a small business, then proves the install actually works with 12 automated checks.
+Who it's for: an agency or contractor who installs the same AI receptionist (website, chat, phone agent) for many small businesses.
+
+What it does: one command sets up a new business, a second command checks the live install against 12 pass/fail checks, and a third rechecks live installs later for anything that broke.
+
+Why: when you run 20 of these, the failures are quiet (a webhook pointing at an old URL, a key leaking into browser code, one client seeing another's data). This finds them before the client does.
+
+```powershell
+npm run frontdesk -- init --client acme-plumbing
+npm run frontdesk -- provision --client acme-plumbing
+npm run frontdesk -- verify --client acme-plumbing --url https://<deployed-url>
+```
+
+A trimmed sample of what `verify` prints against the live demo below:
+
+```
+GATE                   STATUS   REASON
+---------------------  -------  ----------------------------------------
+1 typecheck+build      PASS     typecheck and build both exited 0
+6 elevenlabs privacy   PASS     first message, system prompt, audio saving, auth required, domain allowlist, and max duration all match
+9 RLS isolation        PASS     tenant A user could not read tenant B rows
+12 rate limits         PASS     got 429 within 11 messages sent from one client (CHAT_RATE_LIMIT_PER_IP=10)
+
+Overall: PASS
+```
+
+The live site linked below is not the product. It's a fake client, a made-up plumbing company, that this tool installed and checked, so you can see what an install looks like. A slim banner on every page of that site links to `/about-this-demo`, which explains this again in context and shows its latest verify report.
 
 ## The problem
 
@@ -84,6 +109,17 @@ Overall: PASS
 Gate 11's 502 above is honest, not a mistake: it means the shared secret was accepted (a wrong secret gets 401) and the request reached the LLM provider, which happened to be over its free-tier quota from all the testing on this page. The gate is checking authentication, not the provider's uptime, so that still counts as a pass - see `docs/DESIGN_NOTES.md`.
 
 Full report: `reports/demo-plumbing-2026-09-17.md`. The phone webhook simulator's output against the same install: `reports/simulate-call-2026-09-17.txt`.
+
+## Known limits
+
+Voice agents can still mishear in a noisy room. What this install does about it:
+
+- The agent's turn-taking is set to patient, and it waits longer before deciding a caller has stopped talking, so a stray noise is less likely to be treated as a finished turn.
+- The system prompt tells the agent to skip fragmentary, off-topic, or unclear input instead of answering it, and to say so once if it happens twice in a row.
+- The browser voice widget shows whether it's listening or the agent is speaking, and has a mute button and a text input, so a user in a noisy room can mute or type instead of relying on the microphone.
+- ElevenLabs' widget and SDK do not currently expose a way to pass browser microphone constraints (echo cancellation, noise suppression, automatic gain control) directly, so noise handling on the input side is whatever the browser does by default. See `docs/DESIGN_NOTES.md`.
+
+This has not been tested on a real phone line yet, only in the browser - see "What's actually been run, and what hasn't" below.
 
 ## Architecture
 
