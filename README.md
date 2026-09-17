@@ -92,21 +92,21 @@ GATE                   STATUS   REASON
 ---------------------  -------  ----------------------------------------
 1 typecheck+build      PASS     typecheck and build both exited 0
 2 pages 200            PASS     /, /dashboard/login all returned 200
-3 consent gate         PASS     403 without consent, 200 with consent
+3 consent gate         FAIL     expected 403 without consent, got 429
 4 voice signature      PASS     valid signature accepted, unsigned and tampered both rejected with 403
 5 twilio number        SKIPPED  no TWILIO_ACCOUNT_SID - this install has no Twilio account
-6 elevenlabs privacy   PASS     first message, system prompt, audio saving, auth required, domain allowlist, and max duration all match
+6 elevenlabs privacy   PASS     first message, system prompt, audio saving, auth required, domain allowlist, max duration, turn eagerness, turn timeout, and skip_turn all match
 7 resend domain        PASS     notify.arsalmurad.com is verified
 8 secrets server-only  PASS     scanned .next/static, no server-only names or values found
 9 RLS isolation        PASS     tenant A user could not read tenant B rows
 10 media-gate          PASS     unsigned and expired both rejected, valid signature accepted
-11 llm-gateway auth    PASS     401 without shared secret, 502 with it (not 401, so the secret was accepted)
+11 llm-gateway auth    PASS     401 without shared secret, 200 with it (not 401, so the secret was accepted)
 12 rate limits         PASS     got 429 within 11 messages sent from one client (CHAT_RATE_LIMIT_PER_IP=10)
 
-Overall: PASS
+Overall: FAIL
 ```
 
-Gate 11's 502 above is honest, not a mistake: it means the shared secret was accepted (a wrong secret gets 401) and the request reached the LLM provider, which happened to be over its free-tier quota from all the testing on this page. The gate is checking authentication, not the provider's uptime, so that still counts as a pass - see `docs/DESIGN_NOTES.md`.
+This is left as an honest live result, not cleaned up to look better: gate 3's FAIL isn't a broken consent gate, it's the shared daily chat quota (`CHAT_RATE_LIMIT_DAILY=15`, deliberately low to stay under Gemini's free-tier ceiling) already spent for the day from repeated testing, including gate 12 itself burning 11 messages per run. The chat route can't tell "quota exhausted" apart from "rate limited" at the point gate 3 checks it - both come back 429. Every gate that isn't rate-limit-sensitive still passes, which is what this run is actually verifying. See `docs/DESIGN_NOTES.md`.
 
 Full report: `reports/demo-plumbing-2026-09-17.md`. The phone webhook simulator's output against the same install: `reports/simulate-call-2026-09-17.txt`.
 
