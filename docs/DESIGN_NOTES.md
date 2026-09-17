@@ -107,6 +107,19 @@ step is idempotent in effect (the end state is always correct) even though
 it cannot literally skip a no-op write the way the Twilio and ElevenLabs
 steps do.
 
+## A real bug found while taking screenshots
+
+The chat widget only special-cased a 403 response (expired consent). Any
+other non-2xx response, including a 429 from the rate limiter, fell through
+to `data.reply`, which is `undefined` on an error body, and rendered as a
+blank assistant bubble instead of the friendly rate-limit message the API
+actually sent back. Found by hitting the widget in a browser right after a
+`frontdesk verify` run (gate 12 deliberately exhausts the per-IP chat limit
+from whatever machine ran it) - exactly the kind of thing that only shows up
+by actually using the UI, not by reading the API route in isolation. Fixed
+in `apps/web/app/components/ChatWidget.tsx` to show `data.error` for any
+non-ok response.
+
 ## A known local-only quirk
 
 `scripts/simulate-call.ts`'s localhost leg signs requests against the

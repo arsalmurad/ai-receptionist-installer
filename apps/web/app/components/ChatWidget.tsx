@@ -45,6 +45,10 @@ export function ChatWidget({ businessName, disclosure }: { businessName: string;
         return;
       }
       const data = await res.json();
+      if (!res.ok) {
+        setNote(data.error ?? "Something went wrong. Please try again.");
+        return;
+      }
       setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
       if (data.leadCaptured) {
         setNote("We've saved your info and someone will follow up.");
