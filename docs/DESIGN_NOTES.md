@@ -107,6 +107,36 @@ step is idempotent in effect (the end state is always correct) even though
 it cannot literally skip a no-op write the way the Twilio and ElevenLabs
 steps do.
 
+## Gate 11 tested provider uptime, not auth
+
+`frontdesk verify` gate 11 required a with-secret request to `llm-gateway`
+to return exactly 200, which conflated two different things: whether the
+shared secret is accepted, and whether the LLM provider behind it happens
+to be up. A real Gemini free-tier quota blip turned a correct auth check
+into a false FAIL. Fixed to only require "not 401" for the with-secret
+case - 401 means the secret was rejected (a real auth failure), anything
+else means the secret was accepted and the request reached the provider
+call, whatever happened after that is a provider-availability question the
+gate was never meant to answer.
+
+## A custom .vercel.app alias does not follow new deployments
+
+After renaming the Vercel project, I claimed a clean alias
+(`ai-receptionist-installer.vercel.app`) with `vercel alias set`. Vercel's
+own auto-managed production alias (the long team-suffixed one) repoints
+itself to the newest deployment on every `vercel deploy --prod`
+automatically. A manually created alias does not - it stays pinned to
+whatever deployment it was pointed at until you run `vercel alias set`
+again. This meant several redeploys in a row silently kept serving stale
+code on the canonical URL while `vercel deploy` itself reported success,
+which is exactly how the two bugs below stayed "fixed" in git but broken in
+production for a while. The fix going forward: every `vercel deploy --prod`
+in this project must be followed by `vercel alias set <new-deployment-url>
+ai-receptionist-installer.vercel.app`, and `frontdesk verify`'s gate 1
+(build) plus a live gate against the canonical URL is exactly the kind of
+check that should catch a stale alias before it's mistaken for a working
+fix - which is what actually caught this.
+
 ## Gemini's free tier is the real binding limit, not our own rate limit
 
 While taking screenshots, the chat route started returning 500s. The cause

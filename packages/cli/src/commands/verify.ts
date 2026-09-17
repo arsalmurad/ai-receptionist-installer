@@ -250,9 +250,14 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
         headers: { "content-type": "application/json", [LLM_GATEWAY_SECRET_HEADER]: secret },
         body: JSON.stringify(payload),
       });
-      if (withSecret.status !== 200) throw new Fail(`with-secret request expected 200, got ${withSecret.status}`);
+      // This gate is about the auth check, not the LLM provider's own
+      // uptime - a correct secret must never come back 401. 502 means the
+      // secret was accepted and the request reached the provider call,
+      // which then failed on its own (e.g. a free-tier quota); that is a
+      // real but separate problem, not an auth failure.
+      if (withSecret.status === 401) throw new Fail(`with-secret request was rejected with 401 - the shared secret is not being accepted`);
 
-      return "401 without shared secret, 200 with it";
+      return `401 without shared secret, ${withSecret.status} with it (not 401, so the secret was accepted)`;
     }),
   );
 
