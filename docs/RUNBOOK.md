@@ -49,6 +49,23 @@ deploys, Twilio number config, ElevenLabs agent config) before doing it, and
 tells you which were skipped and why. Safe to re-run - it only changes what
 is not already correct.
 
+**ElevenLabs agent security settings (done automatically by this step, dashboard
+steps here for reference or manual troubleshooting):**
+
+1. Open the agent in the ElevenLabs dashboard and go to its **Security** tab.
+2. Turn on **Enable authentication** (this is `platform_settings.auth.enable_auth`
+   via the API) so the agent only accepts a signed session, not a public agent id.
+3. Under **Allowlist**, add the deployment's hostname (for example
+   `frontdesk-kit-rho.vercel.app`) - this is an exact hostname match, so add
+   subdomains separately if you use any.
+4. Go to the **Advanced** tab, find **Call limits**, and set **Max conversation
+   duration** to 120 seconds (2 minutes) - this is
+   `conversation_config.conversation.max_duration_seconds` via the API, range
+   60-7200, default 600.
+
+`frontdesk verify` gate 6 reads all three settings back and fails if they don't
+match the deployment.
+
 ## 5. Set up the client's own Twilio account
 
 **(manual)** This project does not and cannot provision a Twilio account for
@@ -108,7 +125,14 @@ Call the number. Confirm:
   call and its final status, not "in-progress" forever.
 
 This is the one thing in this project that is genuinely untested by
-anything automated - see README, "Tested live / Built to docs" table.
+anything automated - see README, "What's actually been run, and what hasn't".
+
+Before a Twilio account exists, the same agent can be tested in a browser on
+the client's site ("Talk to the receptionist"). It is the same agent
+configuration, so it is a reasonable stand-in for the content of the
+conversation, but it does not exercise the phone webhook, signature
+checking, or the Twilio-specific handoff, so it is not a substitute for this
+step once a phone number is live.
 
 ## 9. Client walkthrough checklist
 
