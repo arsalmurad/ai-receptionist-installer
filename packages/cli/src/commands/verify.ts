@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import {
   computeTwilioSignature,
   TWILIO_SIGNATURE_HEADER,
@@ -9,6 +10,8 @@ import {
   getIncomingPhoneNumber,
   signMediaPath,
   LLM_GATEWAY_SECRET_HEADER,
+  VERIFY_TOKEN_HEADER,
+  VERIFY_RATE_LIMIT_KEY_HEADER,
 } from "@frontdesk-kit/config";
 import { readClientConfig } from "../lib/clientConfig";
 import { env } from "../lib/env";
@@ -79,9 +82,17 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
     await runGate("3 consent gate", async () => {
       if (!url) throw new Skip("no --url given");
 
+      // VERIFY_TOKEN, when set, keeps this gate's chat traffic out of the
+      // public daily quota and answers it with the mock provider - see
+      // docs/DESIGN_NOTES.md. Without it, this gate falls back to spending
+      // real public quota, same as before.
+      const verifyToken = env("VERIFY_TOKEN");
+      const chatHeaders: Record<string, string> = { "content-type": "application/json" };
+      if (verifyToken) chatHeaders[VERIFY_TOKEN_HEADER] = verifyToken;
+
       const withoutConsent = await fetch(`${url}/api/chat/message`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: chatHeaders,
         body: JSON.stringify({ consentId: "00000000-0000-0000-0000-000000000000", sessionId: "00000000-0000-0000-0000-000000000000", message: "hi" }),
       });
       if (withoutConsent.status !== 403) throw new Fail(`expected 403 without consent, got ${withoutConsent.status}`);
@@ -92,7 +103,7 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
 
       const withConsent = await fetch(`${url}/api/chat/message`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: chatHeaders,
         body: JSON.stringify({ consentId, sessionId, message: "Do you offer free estimates?" }),
       });
       if (withConsent.status !== 200) throw new Fail(`expected 200 with consent, got ${withConsent.status}`);
@@ -271,11 +282,25 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
       if (consentRes.status !== 200) throw new Fail(`consent endpoint returned ${consentRes.status}`);
       const { consentId, sessionId } = (await consentRes.json()) as { consentId: string; sessionId: string };
 
+      // VERIFY_TOKEN + a fresh synthetic key per run lets this gate exercise
+      // the real public "chat_ip" scope and limit (proving the actual thing
+      // a real visitor would hit) under a key isolated from any real
+      // visitor's bucket, and answered by the mock provider - so blasting
+      // limit+1 messages here never affects a real visitor or the shared
+      // daily Gemini quota. Without VERIFY_TOKEN, falls back to the old
+      // behavior: the runner's own real IP and the real public quota.
+      const verifyToken = env("VERIFY_TOKEN");
+      const chatHeaders: Record<string, string> = { "content-type": "application/json" };
+      if (verifyToken) {
+        chatHeaders[VERIFY_TOKEN_HEADER] = verifyToken;
+        chatHeaders[VERIFY_RATE_LIMIT_KEY_HEADER] = `gate12-${randomUUID()}`;
+      }
+
       let lastStatus = 0;
       for (let i = 0; i < limit + 1; i++) {
         const res = await fetch(`${url}/api/chat/message`, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: chatHeaders,
           body: JSON.stringify({ consentId, sessionId, message: "hi" }),
         });
         lastStatus = res.status;
@@ -285,7 +310,9 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
       if (lastStatus !== 429) {
         throw new Fail(`sent ${limit + 1} messages from one client and never got 429 (CHAT_RATE_LIMIT_PER_IP=${limit})`);
       }
-      return `got 429 within ${limit + 1} messages sent from one client (CHAT_RATE_LIMIT_PER_IP=${limit}); tests the real per-IP limit from a single client rather than a spoofable test-IP header, since Vercel already overwrites x-forwarded-for and does not forward external IPs`;
+      return verifyToken
+        ? `got 429 within ${limit + 1} messages sent under an isolated verify-only test key (CHAT_RATE_LIMIT_PER_IP=${limit}); exercises the real public per-IP limit without touching any real visitor's window or the shared daily quota`
+        : `got 429 within ${limit + 1} messages sent from one client (CHAT_RATE_LIMIT_PER_IP=${limit}); tests the real per-IP limit from a single client rather than a spoofable test-IP header, since Vercel already overwrites x-forwarded-for and does not forward external IPs`;
     }),
   );
 

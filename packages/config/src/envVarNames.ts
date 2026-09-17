@@ -22,6 +22,7 @@ export const ENV_VAR_SPECS: EnvVarSpec[] = [
   { name: "CLIENT_ID", required: true, public: false, description: "Selects clients/<id>/config.json for this deployment." },
   { name: "LLM_GATEWAY_URL", required: true, public: false, description: "URL of the deployed llm-gateway Worker." },
   { name: "LLM_GATEWAY_SHARED_SECRET", required: true, public: false, description: "Shared secret between apps/web and llm-gateway." },
+  { name: "VERIFY_TOKEN", required: false, public: false, description: "Lets frontdesk verify/simulate-call identify themselves to the chat route so their requests use a separate rate-limit namespace and a mock reply instead of spending the public Gemini quota." },
 
   { name: "TWILIO_ACCOUNT_SID", required: false, public: false, description: "Enables Twilio REST provisioning. Optional - voice webhooks work without it." },
   { name: "TWILIO_AUTH_TOKEN", required: false, public: false, description: "Enables X-Twilio-Signature verification on voice webhooks." },
@@ -44,6 +45,8 @@ export const ENV_VAR_SPECS: EnvVarSpec[] = [
   { name: "CHAT_RATE_LIMIT_PER_IP", required: false, public: false, description: "Chat messages allowed per IP per window. Default 10." },
   { name: "CHAT_RATE_LIMIT_WINDOW_MS", required: false, public: false, description: "Chat per-IP window length in milliseconds. Default 600000 (10 minutes)." },
   { name: "CHAT_RATE_LIMIT_DAILY", required: false, public: false, description: "Chat messages allowed across all visitors per day. Default 200." },
+  { name: "VERIFY_RATE_LIMIT_PER_IP", required: false, public: false, description: "Verify-token chat messages allowed per IP per window. Default 5." },
+  { name: "VERIFY_RATE_LIMIT_DAILY", required: false, public: false, description: "Verify-token chat messages allowed per day, separate from the public daily quota. Default 50." },
   { name: "VOICE_RATE_LIMIT_PER_IP", required: false, public: false, description: "Voice webhook requests allowed per IP per window. Default 20." },
   { name: "VOICE_RATE_LIMIT_WINDOW_MS", required: false, public: false, description: "Voice per-IP window length in milliseconds. Default 600000." },
   { name: "OWNER_EMAIL_DAILY_CAP", required: false, public: false, description: "Owner notification emails allowed per day. Default 20; leads are still saved past the cap, only the email is skipped." },

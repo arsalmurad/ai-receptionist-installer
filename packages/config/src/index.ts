@@ -8,3 +8,4 @@ export * from "./elevenLabsClient";
 export * from "./twilioClient";
 export * from "./resendClient";
 export * from "./envVarNames";
+export * from "./verifyAuth";

@@ -23,6 +23,8 @@ const requiredServerSchema = z.object({
 const optionalServerSchema = z.object({
   SUPABASE_DB_PASSWORD: z.string().optional(),
 
+  VERIFY_TOKEN: z.string().min(16).optional(),
+
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER_SID: z.string().optional(),
@@ -48,6 +50,8 @@ const optionalServerSchema = z.object({
   CHAT_RATE_LIMIT_PER_IP: z.string().optional(),
   CHAT_RATE_LIMIT_WINDOW_MS: z.string().optional(),
   CHAT_RATE_LIMIT_DAILY: z.string().optional(),
+  VERIFY_RATE_LIMIT_PER_IP: z.string().optional(),
+  VERIFY_RATE_LIMIT_DAILY: z.string().optional(),
   VOICE_RATE_LIMIT_PER_IP: z.string().optional(),
   VOICE_RATE_LIMIT_WINDOW_MS: z.string().optional(),
   OWNER_EMAIL_DAILY_CAP: z.string().optional(),

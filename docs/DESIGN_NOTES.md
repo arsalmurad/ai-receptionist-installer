@@ -376,3 +376,83 @@ weakening what the gate actually proves. The honest fix is a clean run
 after the daily window resets, or a per-install `CHAT_RATE_LIMIT_DAILY`
 high enough to survive a verify run's own gate 12, which isn't this
 deployment's free-tier-constrained setup.
+
+**Round 4 note:** this was fixed properly instead - see "VERIFY_TOKEN keeps
+verify traffic off the public quota" and "Gemini's real free-tier daily
+limit" below. Kept the paragraph above rather than rewriting it, since it
+correctly explains why the problem existed in the first place.
+
+## VERIFY_TOKEN keeps verify traffic off the public quota
+
+A round 3 reviewer's fix request revealed the actual design gap behind the
+gate 3/12 problem above: `frontdesk verify` was indistinguishable from a
+real visitor to `/api/chat/message`, so every verify run competed with real
+traffic for the same public daily Gemini budget, and gate 12 specifically
+was blasting a real visitor-shaped burst at the real per-IP limit from
+whatever IP happened to run verify.
+
+Fixed with a server-only `VERIFY_TOKEN` (random, min 16 characters, never
+committed - same pattern as `LLM_GATEWAY_SHARED_SECRET`). A request to
+`/api/chat/message` carrying a valid `x-verify-token` header:
+
+- Gets answered by the mock provider (`forceMock: true` passed through to
+  `workers/llm-gateway`, which honors it ahead of its own `LLM_PROVIDER`
+  setting - see `packages/config/src/llmGateway.ts`), so it never calls
+  Gemini or spends the public daily quota at all.
+- Uses a separate rate-limit namespace (`chat_ip_verify` /
+  `chat_daily_verify`, own small defaults, `VERIFY_RATE_LIMIT_PER_IP=5` /
+  `VERIFY_RATE_LIMIT_DAILY=50`) instead of the public `chat_ip` /
+  `chat_daily` scopes, so verify's own testing volume can never trip or
+  starve the public limits either.
+- Skips the lead-capture + owner-notification side effect entirely (an
+  ungrounded mock reply to a scripted "hi" is not a real lead, and the
+  business owner should not get a real email alert every time someone runs
+  `frontdesk verify`).
+
+Gate 12 is the one exception that still needs to touch the *real* public
+`chat_ip` scope, because that is specifically what it is proving works. It
+sends both `x-verify-token` and a second header,
+`x-verify-rate-limit-key`, set to a fresh random value per run
+(`gate12-<uuid>`). The route only honors the second header when the first
+is already valid (see `apps/web/app/api/chat/message/route.ts`), so a
+public caller can never spoof it to dodge their own per-IP limit - only
+someone who already holds `VERIFY_TOKEN` can pick their own rate-limit
+key. This lets gate 12 exercise the exact same scope, limit, and window a
+real visitor would hit, proving the public limit still trips at 429,
+without ever sharing a bucket with a real visitor's IP or spending the
+shared daily budget to do it. Gates 3 and 12 both fall back to their old,
+public-quota-spending behavior if `VERIFY_TOKEN` isn't set at all, so this
+is additive, not a hard requirement for `frontdesk verify` to run.
+
+## Gemini's real free-tier daily limit
+
+`ai.google.dev/gemini-api/docs/rate-limits` no longer publishes a static
+per-model numeric table - it now says limits "can be viewed in Google AI
+Studio" and links to a signed-in dashboard. Checked the pricing and models
+pages too; neither lists a free-tier RPD number for `gemini-3.6-flash`
+either.
+
+The authoritative number turned out to be sitting in Gemini's own quota
+error response. Calling the real `generateContent` endpoint directly
+(bypassing this project entirely) until it returned 429 gave:
+
+```
+"Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests,
+limit: 20, model: gemini-3.6-flash"
+```
+
+with a structured `QuotaFailure` violation: `quotaId:
+"GenerateRequestsPerDayPerProjectPerModel-FreeTier"`, `quotaValue: "20"`.
+This confirms round 2's empirically-observed "20 requests per day" figure
+was exactly right, from Google's own quota system for this project's real
+key, not a guess.
+
+`CHAT_RATE_LIMIT_DAILY` raised from 15 to **18** - safely under the real
+ceiling of 20, with a 2-request margin held back for: the fixed-window
+reset boundary not being guaranteed to align exactly with Google's own
+quota reset, and any direct testing against the real Gemini API (like the
+probe above) that doesn't go through this app's own counter at all. Now
+that `VERIFY_TOKEN` (above) takes all of `frontdesk verify`'s own chat
+traffic off this budget entirely, the full 18 is available to real
+visitors - unlike round 3, where verify itself was one of the things
+competing for it.

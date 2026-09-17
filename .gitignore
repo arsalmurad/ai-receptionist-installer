@@ -54,5 +54,5 @@ coverage/
 .vercel
 .env*
 
-# local Claude Code state
+# local AI coding assistant state
 .claude/

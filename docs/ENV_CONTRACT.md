@@ -33,6 +33,7 @@ never seen by `apps/web`, only by `workers/llm-gateway` (see its own
 | `CLIENT_ID` | yes | Selects `clients/<id>/config.json` for this deployment. |
 | `LLM_GATEWAY_URL` | yes | URL of the deployed `llm-gateway` Worker. |
 | `LLM_GATEWAY_SHARED_SECRET` | yes | Shared secret between `apps/web` and `llm-gateway`. Min 16 characters. |
+| `VERIFY_TOKEN` | no | Lets `frontdesk verify` identify its own chat requests so they use a separate rate-limit namespace and a mock reply instead of spending the public Gemini quota. Min 16 characters. Never printed or committed. |
 | `TWILIO_ACCOUNT_SID` | no | Enables Twilio REST provisioning (number config). Without it, that provision/verify step is skipped, never failed. |
 | `TWILIO_AUTH_TOKEN` | no | Enables `X-Twilio-Signature` verification on the voice webhooks. The demo deployment sets this to a random generated value, not a real Twilio credential, so the signature-verification path is fully exercised without a real Twilio account. Never printed or committed - see docs/DESIGN_NOTES.md. |
 | `TWILIO_PHONE_NUMBER_SID` | no | The Twilio phone number resource `frontdesk provision` points at this deployment. |
@@ -55,6 +56,8 @@ never seen by `apps/web`, only by `workers/llm-gateway` (see its own
 | `CHAT_RATE_LIMIT_PER_IP` | 10 | Chat messages allowed per IP per window. |
 | `CHAT_RATE_LIMIT_WINDOW_MS` | 600000 (10 min) | Chat per-IP window length. |
 | `CHAT_RATE_LIMIT_DAILY` | 200 | Chat messages allowed across all visitors per day. |
+| `VERIFY_RATE_LIMIT_PER_IP` | 5 | Verify-token chat messages allowed per IP per window - a separate namespace from the public limit above. |
+| `VERIFY_RATE_LIMIT_DAILY` | 50 | Verify-token chat messages allowed per day, separate from the public daily quota above. |
 | `VOICE_RATE_LIMIT_PER_IP` | 20 | Voice webhook requests allowed per IP per window. |
 | `VOICE_RATE_LIMIT_WINDOW_MS` | 600000 | Voice per-IP window length. |
 | `OWNER_EMAIL_DAILY_CAP` | 20 | Owner notification emails allowed per day. Leads are still saved past the cap, only the email is skipped. |
