@@ -34,7 +34,7 @@ never seen by `apps/web`, only by `workers/llm-gateway` (see its own
 | `LLM_GATEWAY_URL` | yes | URL of the deployed `llm-gateway` Worker. |
 | `LLM_GATEWAY_SHARED_SECRET` | yes | Shared secret between `apps/web` and `llm-gateway`. Min 16 characters. |
 | `TWILIO_ACCOUNT_SID` | no | Enables Twilio REST provisioning (number config). Without it, that provision/verify step is skipped, never failed. |
-| `TWILIO_AUTH_TOKEN` | no | Enables `X-Twilio-Signature` verification on the voice webhooks. This is the one credential the demo deployment does have, using a test value, so the signature-verification path is fully exercised without a real Twilio account. |
+| `TWILIO_AUTH_TOKEN` | no | Enables `X-Twilio-Signature` verification on the voice webhooks. The demo deployment sets this to a random generated value, not a real Twilio credential, so the signature-verification path is fully exercised without a real Twilio account. Never printed or committed - see docs/DESIGN_NOTES.md. |
 | `TWILIO_PHONE_NUMBER_SID` | no | The Twilio phone number resource `frontdesk provision` points at this deployment. |
 | `TWILIO_FALLBACK_TWIML_URL` | no | The Twilio-hosted TwiML Bin URL from docs/FALLBACK_TWIML.md, set as the number's Fallback URL. |
 | `ELEVENLABS_API_KEY` | no | Enables the ElevenLabs agent handoff and provisioning. |
@@ -47,6 +47,25 @@ never seen by `apps/web`, only by `workers/llm-gateway` (see its own
 | `MEDIA_GATE_SIGNING_SECRET` | no | Shared secret for HMAC-signed, expiring media URLs. Min 16 characters. |
 | `CLOUDFLARE_ACCOUNT_ID` | no | Used by the CLI to deploy Workers. |
 | `CLOUDFLARE_API_TOKEN` | no | Used by CI to deploy Workers non-interactively (the local CLI can instead rely on an already-`wrangler login`'d session). |
+
+## Rate limits (all optional, all have working defaults)
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `CHAT_RATE_LIMIT_PER_IP` | 10 | Chat messages allowed per IP per window. |
+| `CHAT_RATE_LIMIT_WINDOW_MS` | 600000 (10 min) | Chat per-IP window length. |
+| `CHAT_RATE_LIMIT_DAILY` | 200 | Chat messages allowed across all visitors per day. |
+| `VOICE_RATE_LIMIT_PER_IP` | 20 | Voice webhook requests allowed per IP per window. |
+| `VOICE_RATE_LIMIT_WINDOW_MS` | 600000 | Voice per-IP window length. |
+| `OWNER_EMAIL_DAILY_CAP` | 20 | Owner notification emails allowed per day. Leads are still saved past the cap, only the email is skipped. |
+| `WEB_VOICE_RATE_LIMIT_PER_IP` | 3 | Browser voice demo sessions allowed per IP per window. |
+| `WEB_VOICE_RATE_LIMIT_WINDOW_MS` | 600000 | Browser voice demo per-IP window length. |
+| `WEB_VOICE_DAILY_CAP` | 30 | Browser voice demo sessions allowed across all visitors per day. |
+
+All of these are backed by the `rate_limits` table and its `increment_rate_limit`
+function (see `supabase/migrations/20260917000000_rate_limits.sql`), which does
+an atomic increment-and-read so concurrent requests from the same key cannot
+undercount each other.
 
 ## Feature flags
 

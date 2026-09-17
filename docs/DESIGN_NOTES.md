@@ -120,6 +120,59 @@ and is fully green; treat the deployed leg's result as authoritative and the
 localhost leg as a convenience that may need `NEXT_PUBLIC_SITE_URL`-style
 host alignment to work reliably in dev.
 
+## Round 2: security fix, rate limits, browser voice
+
+**The public test Twilio auth token was a real vulnerability, not just an
+honesty note.** The README documented the exact literal string used for
+`TWILIO_AUTH_TOKEN`. Since the voice webhook only checks that a request's
+signature was computed with that token, publishing it meant anyone reading
+the README could sign requests that pass verification, write real
+`consents`/`call_logs` rows, and trigger a real owner email. Fixed by
+generating a random 32-byte token, rotating it in `.env.local` and Vercel,
+and removing the literal value from every doc - the README now says the
+token is random and never shown, which is sufficient for a reader to trust
+the mechanism without being able to reproduce it.
+
+**`x-forwarded-for` is trustworthy on Vercel, so rate limiting doesn't need a
+spoofable test header.** Vercel's own docs are explicit: "we currently
+overwrite the X-Forwarded-For header and do not forward external IPs. This
+restriction is in place to prevent IP spoofing." That means `frontdesk
+verify`'s rate-limit gate can fire real requests from one real client and
+rely on the real per-IP counter, rather than trusting a client-supplied
+override header, which would just move the spoofing problem rather than
+solve it.
+
+**Rate limit counters live in Postgres, not in-memory.** Vercel Functions are
+stateless per invocation, so an in-memory counter resets on every cold start
+and isn't shared across instances. `rate_limits` plus a single
+`increment_rate_limit(scope, key, window_start)` SQL function does an atomic
+insert-or-increment in one statement, so concurrent requests from the same
+key can't race past each other. The function is `security definer`,
+`revoke`d from `public`, and `grant`ed only to `service_role`, so the anon
+key (already exposed to the browser) cannot call it directly.
+
+**Voice route rate limiting caps a leaked-key risk, but doesn't map to real
+callers.** On a real Twilio call, `x-forwarded-for` on `/api/voice/*` would
+be Twilio's own edge IP, not the caller's phone number - Twilio webhooks
+don't originate from the caller. The per-IP limit there is still worth
+having (it caps the blast radius if `TWILIO_AUTH_TOKEN` ever leaks again or
+gets brute-forced), it just isn't a per-caller limit the way the chat one
+is.
+
+**ElevenLabs' primary documented Twilio integration doesn't cover browser
+auth at all**, so the signed-URL flow came from a separate authentication
+doc: `GET /v1/convai/conversation/get-signed-url` (header `xi-api-key`,
+query param `agent_id`, response field `signed_url`), consumed by the
+`<elevenlabs-convai signed-url="...">` widget attribute (the alternative to
+`agent-id` for a private agent). Requiring auth, the domain allowlist, and
+the max conversation duration are all set via the same agent PATCH endpoint
+used for the phone path: `platform_settings.auth.enable_auth`,
+`platform_settings.auth.allowlist` (array of `{hostname}`), and
+`conversation_config.conversation.max_duration_seconds` (60-7200, default
+600). `frontdesk provision` sets all three from the deployment's own site
+URL and a fixed 120-second cap, and `frontdesk verify` gate 6 reads them
+back.
+
 ## Other decisions
 
 **One shared Supabase project, one Vercel project per client.** Tenant
