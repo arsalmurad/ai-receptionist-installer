@@ -1,4 +1,4 @@
-import { buildSystemPrompt } from "@frontdesk-kit/config";
+import { buildSystemPrompt, CANNOT_ANSWER_FALLBACK, type LlmGatewayResponse } from "@frontdesk-kit/config";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { clientConfig } from "@/lib/clientConfig";
@@ -92,12 +92,22 @@ export async function POST(request: Request): Promise<Response> {
     content: message,
   });
 
-  const gatewayResult = await askGateway({
-    systemPrompt: buildSystemPrompt(clientConfig),
-    userMessage: message,
-    history: (priorMessages ?? []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content as string })),
-    faq: clientConfig.faq,
-  });
+  // A provider outage or quota limit must degrade to the same "let me take
+  // your info" response as a genuine out-of-scope question, never a raw
+  // 500 - a caller should never see the assistant fail open into silence,
+  // and it must never look like the assistant is more capable than it is.
+  let gatewayResult: LlmGatewayResponse;
+  try {
+    gatewayResult = await askGateway({
+      systemPrompt: buildSystemPrompt(clientConfig),
+      userMessage: message,
+      history: (priorMessages ?? []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content as string })),
+      faq: clientConfig.faq,
+    });
+  } catch (error) {
+    console.error("llm-gateway call failed", error);
+    gatewayResult = { reply: CANNOT_ANSWER_FALLBACK, provider: "mock", grounded: false };
+  }
 
   await supabase.from("chat_messages").insert({
     tenant_id: tenantId,

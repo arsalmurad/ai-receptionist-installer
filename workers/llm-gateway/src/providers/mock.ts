@@ -1,4 +1,4 @@
-import type { LlmGatewayRequest, LlmGatewayResponse } from "@frontdesk-kit/config";
+import { CANNOT_ANSWER_FALLBACK, type LlmGatewayRequest, type LlmGatewayResponse } from "@frontdesk-kit/config";
 
 function tokenize(text: string): Set<string> {
   return new Set(
@@ -18,8 +18,6 @@ function overlapScore(a: Set<string>, b: Set<string>): number {
   return shared;
 }
 
-const FALLBACK_REPLY =
-  "I don't have that information from what I was given. Let me take your name and a way to reach you so the team can follow up.";
 
 /**
  * Deterministic provider that answers only from the client's own FAQ list.
@@ -42,5 +40,5 @@ export function runMockProvider(request: LlmGatewayRequest): LlmGatewayResponse 
     return { reply: best.answer, provider: "mock", grounded: true };
   }
 
-  return { reply: FALLBACK_REPLY, provider: "mock", grounded: false };
+  return { reply: CANNOT_ANSWER_FALLBACK, provider: "mock", grounded: false };
 }

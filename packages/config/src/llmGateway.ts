@@ -31,6 +31,17 @@ export interface LlmGatewayResponse {
  */
 export const OUT_OF_SCOPE_MARKER = "OUT_OF_SCOPE";
 
+/**
+ * The one fixed sentence shown whenever the assistant cannot answer from the
+ * client config - whether the model said OUT_OF_SCOPE, or the gateway call
+ * itself failed (a provider outage or quota limit). Same message either way,
+ * on purpose: a caller should never be able to tell a backend failure apart
+ * from a genuine "that's not something I know," and the system should never
+ * invent an answer to cover for either one.
+ */
+export const CANNOT_ANSWER_FALLBACK =
+  "I don't have that information from what I was given. Let me take your name and a way to reach you so the team can follow up.";
+
 export function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;

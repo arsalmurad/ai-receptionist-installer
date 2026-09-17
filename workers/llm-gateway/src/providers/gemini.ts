@@ -1,8 +1,5 @@
-import type { LlmGatewayRequest, LlmGatewayResponse } from "@frontdesk-kit/config";
-import { OUT_OF_SCOPE_MARKER } from "@frontdesk-kit/config";
+import { CANNOT_ANSWER_FALLBACK, OUT_OF_SCOPE_MARKER, type LlmGatewayRequest, type LlmGatewayResponse } from "@frontdesk-kit/config";
 
-const FALLBACK_REPLY =
-  "I don't have that information from what I was given. Let me take your name and a way to reach you so the team can follow up.";
 
 interface GeminiContentPart {
   text: string;
@@ -61,7 +58,7 @@ export async function runGeminiProvider(
   const trimmed = text.trim();
 
   if (!trimmed || trimmed.startsWith(OUT_OF_SCOPE_MARKER)) {
-    return { reply: FALLBACK_REPLY, provider: "gemini", grounded: false };
+    return { reply: CANNOT_ANSWER_FALLBACK, provider: "gemini", grounded: false };
   }
 
   return { reply: trimmed, provider: "gemini", grounded: true };

@@ -107,6 +107,24 @@ step is idempotent in effect (the end state is always correct) even though
 it cannot literally skip a no-op write the way the Twilio and ElevenLabs
 steps do.
 
+## Gemini's free tier is the real binding limit, not our own rate limit
+
+While taking screenshots, the chat route started returning 500s. The cause
+was Gemini's free tier: `generativelanguage.googleapis.com` caps
+`gemini-3.6-flash` at 20 requests per day per project on the free tier,
+independent of anything this app controls. Our own `CHAT_RATE_LIMIT_DAILY`
+default of 200 is meaningless if the vendor cuts the connection at 20 first,
+and the failure mode was worse than a friendly cap - an unhandled 500, not
+even the graceful "reached today's limit" message. Two fixes: `CHAT_RATE_LIMIT_DAILY`
+is set to 15 on this deployment (comfortably under Gemini's real ceiling, so
+our own message fires first), and the chat route now catches an
+`llm-gateway` failure of any kind and degrades to the same fixed "let me
+take your info" response used for a genuine out-of-scope question - a
+backend outage must never be visible to a caller as silence, a raw error, or
+(worse) an invented answer. A production deployment with a paid Gemini tier
+or a different provider would not need the lowered cap; it exists here
+specifically because this demo runs on the free tier.
+
 ## A real bug found while taking screenshots
 
 The chat widget only special-cased a 403 response (expired consent). Any
