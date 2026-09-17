@@ -168,9 +168,9 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
       const siteHostname = url ? new URL(url).hostname : undefined;
       const desired = buildDesiredAgentState(config, siteHostname);
       if (!agentMatchesDesired(agent, desired)) {
-        throw new Fail("agent first_message/prompt/audio-saving/auth/allowlist/max-duration do not match config. Run frontdesk provision first.");
+        throw new Fail("agent first_message/prompt/audio-saving/auth/allowlist/max-duration/turn-eagerness/turn-timeout/skip_turn do not match config. Run frontdesk provision first.");
       }
-      return "first message, system prompt, audio saving, auth required, domain allowlist, and max duration all match";
+      return "first message, system prompt, audio saving, auth required, domain allowlist, max duration, turn eagerness, turn timeout, and skip_turn all match";
     }),
   );
 

@@ -19,25 +19,36 @@ const config: ClientConfig = {
 
 const hostname = "acme.example.com";
 
+function matchingAgent(desired: ReturnType<typeof buildDesiredAgentState>) {
+  return {
+    agent_id: "a1",
+    conversation_config: {
+      agent: {
+        first_message: desired.firstMessage,
+        prompt: {
+          prompt: desired.systemPrompt,
+          built_in_tools: { skip_turn: { type: "system", name: "skip_turn", params: { system_tool_type: "skip_turn" } } },
+        },
+      },
+      conversation: { max_duration_seconds: desired.maxDurationSeconds },
+      turn: { turn_eagerness: desired.turnEagerness, turn_timeout: desired.turnTimeoutSeconds },
+    },
+    platform_settings: {
+      privacy: { record_voice: false },
+      auth: { enable_auth: true, allowlist: [{ hostname }] },
+    },
+  };
+}
+
 describe("agentMatchesDesired", () => {
-  it("is true only when message, prompt, audio saving, auth, allowlist, and duration all match", () => {
+  it("is true only when every field, including turn eagerness, turn timeout, and skip_turn, matches", () => {
     const desired = buildDesiredAgentState(config, hostname);
-    const matching = {
-      agent_id: "a1",
-      conversation_config: {
-        agent: { first_message: desired.firstMessage, prompt: { prompt: desired.systemPrompt } },
-        conversation: { max_duration_seconds: desired.maxDurationSeconds },
-      },
-      platform_settings: {
-        privacy: { record_voice: false },
-        auth: { enable_auth: true, allowlist: [{ hostname }] },
-      },
-    };
+    const matching = matchingAgent(desired);
     expect(agentMatchesDesired(matching, desired)).toBe(true);
 
     const wrongPrompt = {
       ...matching,
-      conversation_config: { ...matching.conversation_config, agent: { first_message: desired.firstMessage, prompt: { prompt: "different" } } },
+      conversation_config: { ...matching.conversation_config, agent: { ...matching.conversation_config.agent, prompt: { ...matching.conversation_config.agent.prompt, prompt: "different" } } },
     };
     expect(agentMatchesDesired(wrongPrompt, desired)).toBe(false);
 
@@ -52,6 +63,18 @@ describe("agentMatchesDesired", () => {
 
     const wrongDuration = { ...matching, conversation_config: { ...matching.conversation_config, conversation: { max_duration_seconds: 600 } } };
     expect(agentMatchesDesired(wrongDuration, desired)).toBe(false);
+
+    const wrongEagerness = { ...matching, conversation_config: { ...matching.conversation_config, turn: { ...matching.conversation_config.turn, turn_eagerness: "eager" as const } } };
+    expect(agentMatchesDesired(wrongEagerness, desired)).toBe(false);
+
+    const wrongTimeout = { ...matching, conversation_config: { ...matching.conversation_config, turn: { ...matching.conversation_config.turn, turn_timeout: 3 } } };
+    expect(agentMatchesDesired(wrongTimeout, desired)).toBe(false);
+
+    const noSkipTurn = {
+      ...matching,
+      conversation_config: { ...matching.conversation_config, agent: { ...matching.conversation_config.agent, prompt: { prompt: desired.systemPrompt, built_in_tools: { skip_turn: null } } } },
+    };
+    expect(agentMatchesDesired(noSkipTurn, desired)).toBe(false);
   });
 });
 
@@ -66,27 +89,14 @@ describe("ensureAgentConfigured (mocked ElevenLabs API)", () => {
   it("does not PATCH when already configured correctly (idempotent)", async () => {
     const desired = buildDesiredAgentState(config, hostname);
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        agent_id: "a1",
-        conversation_config: {
-          agent: { first_message: desired.firstMessage, prompt: { prompt: desired.systemPrompt } },
-          conversation: { max_duration_seconds: desired.maxDurationSeconds },
-        },
-        platform_settings: {
-          privacy: { record_voice: false },
-          auth: { enable_auth: true, allowlist: [{ hostname }] },
-        },
-      }),
-    });
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => matchingAgent(desired) });
 
     const result = await ensureAgentConfigured("key", "a1", config, hostname);
     expect(result.changed).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("PATCHes with the disclosure line, grounded prompt, audio saving off, auth, allowlist, and max duration when out of date", async () => {
+  it("PATCHes with turn eagerness, turn timeout, and skip_turn enabled when out of date", async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
     fetchMock
       .mockResolvedValueOnce({
@@ -108,7 +118,15 @@ describe("ensureAgentConfigured (mocked ElevenLabs API)", () => {
     expect(body.conversation_config.agent.first_message).toContain("Acme Plumbing");
     expect(body.conversation_config.agent.first_message).toContain("recorded line");
     expect(body.conversation_config.agent.prompt.prompt).toContain("Free estimates?");
+    expect(body.conversation_config.agent.prompt.prompt).toContain("skip_turn");
     expect(body.conversation_config.conversation.max_duration_seconds).toBe(120);
+    expect(body.conversation_config.turn.turn_eagerness).toBe("patient");
+    expect(body.conversation_config.turn.turn_timeout).toBe(10);
+    expect(body.conversation_config.agent.prompt.built_in_tools.skip_turn).toEqual({
+      type: "system",
+      name: "skip_turn",
+      params: { system_tool_type: "skip_turn" },
+    });
     expect(body.platform_settings.privacy.record_voice).toBe(false);
     expect(body.platform_settings.auth.enable_auth).toBe(true);
     expect(body.platform_settings.auth.allowlist).toEqual([{ hostname }]);

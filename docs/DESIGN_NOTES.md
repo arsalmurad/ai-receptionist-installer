@@ -257,3 +257,74 @@ must carry the disclosure. Doing both means the disclosure is guaranteed to
 play even if the ElevenLabs handoff fails and falls back to a plain
 `<Say>`/`<Record>`, at the cost of a caller who reaches a working agent
 hearing it stated twice in quick succession.
+
+## Round 3: reviewer feedback - demo clarity and voice noise handling
+
+A reviewer testing the live demo said two things: it wasn't clear what the
+tool actually does versus the fake plumbing site, and the browser voice
+agent answered phantom phrases like "good morning" when nobody had said
+anything - the demo's office background noise was getting transcribed and
+answered as if it were real speech.
+
+**Demo clarity: a banner and an about page, not a rewritten homepage.** The
+homepage is deliberately still the fake client's site (that's the point of
+the demo), so the fix is a slim banner on every page linking to
+`/about-this-demo`, plus rewriting the README's opening framing so a reader
+understands the product within 10 seconds, not just visitors to the live
+site. See `apps/web/app/components/DemoBanner.tsx`,
+`apps/web/app/about-this-demo/page.tsx`, and the top of `README.md`.
+
+**Turn timeout: 10 seconds, from ElevenLabs' own conversation-flow guidance,
+not a guess.** The conversation flow docs
+(`docs/eleven-agents/customization/conversation-flow`) give `turn_timeout`
+a documented range of 1-30 seconds, with "5-10 seconds for casual
+conversations where quick back-and-forth is expected" and "10-30 seconds
+when users may need more time to think." 10 seconds sits at the top of the
+casual-conversation band and the bottom of the longer band - long enough
+that a brief noise blip during silence is less likely to be treated as a
+completed turn, without making a caller who really has finished talking
+wait noticeably long for a reply. Combined with `turn_eagerness: "patient"`
+(the docs recommend "patient" specifically for letting a caller take more
+time, versus "eager" for rapid customer-service replies), the agent waits
+longer before deciding the caller is done, which is the main lever available
+against noise being mistaken for a finished turn. See
+`packages/cli/src/lib/elevenLabsProvision.ts`.
+
+**Audio environment does not help with input noise, and we say so instead of
+pretending it does.** That docs page
+(`docs/eleven-agents/customization/voice/audio-environment`) is entirely
+about the agent's *outbound* audio: `background_sound` loops ambient sound
+under the agent's own speech, and `voice_filter` reshapes the agent's
+generated voice. The docs state background sound "is not sent into speech
+recognition" - it cannot affect what the agent hears from a caller in a
+noisy room, only what the caller hears from the agent. There is no
+documented ElevenLabs setting for suppressing noise in incoming caller
+audio, so this layer contributes nothing to the noise problem and is left
+alone (it was already off, and stays off).
+
+**Neither the embed widget nor the React SDK accepts custom microphone
+constraints.** The ask was to request the mic with
+`echoCancellation`/`noiseSuppression`/`autoGainControl` if either surface
+allowed it. Neither `<elevenlabs-convai>` nor `@elevenlabs/react`'s
+`useConversation` exposes a `getUserMedia` constraints option in their
+current docs or public API - both open the microphone internally. The
+switch from the embed widget to the SDK happened anyway, because the SDK
+still exposes things the widget doesn't: conversation `status`
+(listening/speaking), `isMuted`/`setMuted()`, and `sendUserMessage()` for a
+text fallback. Browser-side noise handling is therefore limited to whatever
+noise suppression the OS/browser applies by default to any `getUserMedia`
+call, plus the mute button and text input as user-controlled workarounds.
+See `apps/web/app/components/VoiceWidget.tsx`.
+
+**skip_turn and a fragmentary-input instruction do the rest of the work.**
+The agent's `built_in_tools.skip_turn` system tool (documented as an
+option under `conversation_config.agent.prompt.built_in_tools`) lets the
+agent decline to respond to a turn instead of being forced to say
+something. The system prompt tells it explicitly when to use that tool:
+fragmentary, off-topic, or non-caller-sounding input should be skipped, not
+answered, and two skips in a row get one short "Sorry, I didn't catch that"
+line instead of silence forever. This is the layer that actually stops a
+transcribed noise blip from producing a made-up answer - the timing and
+audio settings above only reduce how often noise gets transcribed as a
+turn in the first place. See `VOICE_NOISE_INSTRUCTIONS` in
+`packages/cli/src/lib/elevenLabsProvision.ts`.
