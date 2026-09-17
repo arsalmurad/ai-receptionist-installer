@@ -354,3 +354,25 @@ longer "pending," at which point `condition_result.result` and
 `agent_responses` hold the actual verdict and what the agent said. See
 `scripts/voice-noise-test.ts` and `getTestInvocation()` in
 `packages/config/src/elevenLabsClient.ts`.
+
+## Gate 3 can be starved by the same daily chat quota gate 12 spends
+
+Re-running `frontdesk verify` live several times in one round (each run's
+own gate 12 deliberately sends 11 chat messages to trip the per-IP limit)
+spent the shared daily budget (`CHAT_RATE_LIMIT_DAILY=15`, kept low to stay
+under Gemini's free-tier ceiling - see the Gemini section above) partway
+through this round's testing. Once that budget is gone, `/api/chat/message`
+returns 429 for every request regardless of consent, including gate 3's
+first without-consent request, which expects 403. The route can't
+distinguish "quota exhausted" from "rate limited" before it ever reaches
+consent logic, so gate 3 reads as a FAIL that looks like a broken consent
+gate but is actually a shared-budget collision from testing volume, not a
+functional regression - every other gate, including the new gate 6 checks
+this round added, still passed live. Left unfixed rather than special-cased
+like gate 11 was: unlike gate 11, gate 3 genuinely needs to send a real
+without-consent request to prove 403 happens before any answer, so there's
+no equivalent "don't require the exact status" fix available without
+weakening what the gate actually proves. The honest fix is a clean run
+after the daily window resets, or a per-install `CHAT_RATE_LIMIT_DAILY`
+high enough to survive a verify run's own gate 12, which isn't this
+deployment's free-tier-constrained setup.
