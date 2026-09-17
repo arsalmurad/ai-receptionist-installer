@@ -49,7 +49,9 @@ export default {
     }
 
     try {
-      const provider = env.LLM_PROVIDER || "mock";
+      // forceMock is set only by apps/web, and only after it authenticated
+      // the caller's own VERIFY_TOKEN - see packages/config/src/llmGateway.ts.
+      const provider = body.forceMock ? "mock" : env.LLM_PROVIDER || "mock";
       const result =
         provider === "gemini"
           ? await runGeminiProvider(body, requireKey(env), env.LLM_MODEL)

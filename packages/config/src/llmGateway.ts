@@ -12,6 +12,16 @@ export interface LlmGatewayRequest {
   history: Array<{ role: "user" | "assistant"; content: string }>;
   /** Structured FAQ, used by the mock provider so it does not have to parse systemPrompt text. */
   faq: Array<{ question: string; answer: string }>;
+  /**
+   * Forces the deterministic mock provider regardless of the gateway's own
+   * LLM_PROVIDER setting. Only apps/web sets this (after authenticating the
+   * caller's VERIFY_TOKEN itself) - the gateway trusts it because reaching
+   * this endpoint at all already required the shared secret, so a caller
+   * able to set this field could call the real provider anyway. Exists so
+   * `frontdesk verify` can exercise the real chat path without spending
+   * real Gemini free-tier quota - see docs/DESIGN_NOTES.md.
+   */
+  forceMock?: boolean;
 }
 
 export interface LlmGatewayResponse {
