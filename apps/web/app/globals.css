@@ -114,3 +114,16 @@ th, td {
   align-self: flex-start;
   background: #eef0ec;
 }
+
+.demo-banner {
+  background: var(--accent);
+  color: var(--accent-fg);
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.demo-banner a {
+  color: var(--accent-fg);
+  text-decoration: underline;
+}
