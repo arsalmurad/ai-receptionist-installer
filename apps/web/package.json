@@ -9,6 +9,7 @@
     "typecheck": "tsx scripts/with-root-env.ts \"tsx scripts/generate-client-config.ts && tsc --noEmit -p tsconfig.json\""
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.15.2",
     "@frontdesk-kit/config": "*",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
