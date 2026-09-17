@@ -1,7 +1,7 @@
 # Install report: demo-plumbing
 
-Run at: 2026-09-17T07:18:41.322Z
-Target URL: https://frontdesk-kit-rho.vercel.app
+Run at: 2026-09-17T10:01:33.561Z
+Target URL: https://ai-receptionist-installer.vercel.app
 Overall: PASS
 
 | Gate | Status | Reason |

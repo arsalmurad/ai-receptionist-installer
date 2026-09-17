@@ -2,7 +2,7 @@
 === localhost (http://127.0.0.1:3000) ===
 SKIPPED - nothing listening on localhost:3000. Run "npm run dev -w apps/web" first to include this target.
 
-=== deployed (https://frontdesk-kit-rho.vercel.app) ===
+=== deployed (https://ai-receptionist-installer.vercel.app) ===
 [PASS] unsigned request rejected - status=403
 [PASS] tampered signature rejected - status=403
 [PASS] valid signature accepted (200) - status=200
