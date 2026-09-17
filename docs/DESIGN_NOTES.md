@@ -328,3 +328,29 @@ transcribed noise blip from producing a made-up answer - the timing and
 audio settings above only reduce how often noise gets transcribed as a
 turn in the first place. See `VOICE_NOISE_INSTRUCTIONS` in
 `packages/cli/src/lib/elevenLabsProvision.ts`.
+
+**`@elevenlabs/react`'s `useConversation` requires a `ConversationProvider`
+ancestor, which broke the production build, not just local dev.** The docs
+state "all conversation hooks must be used within a ConversationProvider,"
+but the first VoiceWidget rewrite called `useConversation` directly. This
+passed local typecheck and lint (a type-only problem, not what either
+checks) and only failed at `next build`'s static prerender step of `/`,
+which is also exactly what Vercel's build runs on every deploy - so it
+reached CI green and still broke the live deploy. Fixed by wrapping the
+hook-using component in `<ConversationProvider>` inside `VoiceWidget.tsx`.
+This is now the standing reason `npm run build -w apps/web` gets run
+locally before pushing frontend changes, not just typecheck/lint/test.
+
+**The ElevenLabs agent-testing "run-tests" response is documented as
+starting a run, but not how to read its result.** The docs describe
+`POST /v1/convai/agent-testing/create` and
+`.../agents/{agent_id}/run-tests` in enough detail to start a test, but the
+run-tests response only ever comes back with each test's status as
+"pending" - the docs pages available don't describe how to retrieve the
+resolved result. Found by probing the live API with the run-tests
+response's own `id` field: `GET /v1/convai/test-invocations/{id}` returns
+200 with the same test_runs array, polled until each entry's status is no
+longer "pending," at which point `condition_result.result` and
+`agent_responses` hold the actual verdict and what the agent said. See
+`scripts/voice-noise-test.ts` and `getTestInvocation()` in
+`packages/config/src/elevenLabsClient.ts`.
