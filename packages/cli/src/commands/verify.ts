@@ -158,18 +158,19 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
     }),
   );
 
-  // Gate 6: ElevenLabs privacy readback
+  // Gate 6: ElevenLabs privacy, auth, and max-duration readback
   results.push(
     await runGate("6 elevenlabs privacy", async () => {
       const apiKey = env("ELEVENLABS_API_KEY");
       const agentId = env("ELEVENLABS_AGENT_ID");
       if (!apiKey || !agentId) throw new Skip("no ELEVENLABS_API_KEY/ELEVENLABS_AGENT_ID set");
       const agent = await getAgent(apiKey, agentId);
-      const desired = buildDesiredAgentState(config);
+      const siteHostname = url ? new URL(url).hostname : undefined;
+      const desired = buildDesiredAgentState(config, siteHostname);
       if (!agentMatchesDesired(agent, desired)) {
-        throw new Fail("agent first_message/prompt/audio-saving do not match config. Run frontdesk provision first.");
+        throw new Fail("agent first_message/prompt/audio-saving/auth/allowlist/max-duration do not match config. Run frontdesk provision first.");
       }
-      return "first message, system prompt, and audio saving all match";
+      return "first message, system prompt, audio saving, auth required, domain allowlist, and max duration all match";
     }),
   );
 
@@ -252,6 +253,34 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
       if (withSecret.status !== 200) throw new Fail(`with-secret request expected 200, got ${withSecret.status}`);
 
       return "401 without shared secret, 200 with it";
+    }),
+  );
+
+  // Gate 12: rate limits
+  results.push(
+    await runGate("12 rate limits", async () => {
+      if (!url) throw new Skip("no --url given");
+      const limit = Number(env("CHAT_RATE_LIMIT_PER_IP") ?? 10);
+
+      const consentRes = await fetch(`${url}/api/chat/consent`, { method: "POST" });
+      if (consentRes.status !== 200) throw new Fail(`consent endpoint returned ${consentRes.status}`);
+      const { consentId, sessionId } = (await consentRes.json()) as { consentId: string; sessionId: string };
+
+      let lastStatus = 0;
+      for (let i = 0; i < limit + 1; i++) {
+        const res = await fetch(`${url}/api/chat/message`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ consentId, sessionId, message: "hi" }),
+        });
+        lastStatus = res.status;
+        if (res.status === 429) break;
+      }
+
+      if (lastStatus !== 429) {
+        throw new Fail(`sent ${limit + 1} messages from one client and never got 429 (CHAT_RATE_LIMIT_PER_IP=${limit})`);
+      }
+      return `got 429 within ${limit + 1} messages sent from one client (CHAT_RATE_LIMIT_PER_IP=${limit}); tests the real per-IP limit from a single client rather than a spoofable test-IP header, since Vercel already overwrites x-forwarded-for and does not forward external IPs`;
     }),
   );
 

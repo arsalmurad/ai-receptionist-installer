@@ -4,8 +4,12 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { clientConfig } from "@/lib/clientConfig";
 import { verifyTwilioRequest, xmlEscape } from "@/lib/twilioAuth";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
+
+const IP_LIMIT = Number(process.env.VOICE_RATE_LIMIT_PER_IP ?? 20);
+const IP_WINDOW_MS = Number(process.env.VOICE_RATE_LIMIT_WINDOW_MS ?? 10 * 60 * 1000);
 
 function wrapWithDisclosure(twiml: string, disclosureSay: string): string {
   const match = twiml.match(/<Response>([\s\S]*)<\/Response>/i);
@@ -30,6 +34,14 @@ export async function POST(request: Request): Promise<Response> {
   const { valid, params } = await verifyTwilioRequest(request, env.TWILIO_AUTH_TOKEN);
   if (!valid) {
     return new Response("invalid signature", { status: 403 });
+  }
+
+  // Note: on a real Twilio call this counts Twilio's own edge IP, not the
+  // caller's phone number - see docs/DESIGN_NOTES.md. It still caps the
+  // cost of a leaked or brute-forced signing key.
+  const ipCheck = await checkRateLimit("voice_ip", clientIp(request), IP_WINDOW_MS, IP_LIMIT);
+  if (!ipCheck.allowed) {
+    return new Response("rate limit exceeded", { status: 429 });
   }
 
   const tenantId = await getTenantId();

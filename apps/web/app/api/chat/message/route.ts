@@ -4,6 +4,7 @@ import { getTenantId } from "@/lib/tenant";
 import { clientConfig } from "@/lib/clientConfig";
 import { askGateway } from "@/lib/llmGatewayClient";
 import { notifyOwnerOfLead } from "@/lib/ownerNotify";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,11 @@ interface RequestBody {
   sessionId?: string;
   message?: string;
 }
+
+const IP_LIMIT = Number(process.env.CHAT_RATE_LIMIT_PER_IP ?? 10);
+const IP_WINDOW_MS = Number(process.env.CHAT_RATE_LIMIT_WINDOW_MS ?? 10 * 60 * 1000);
+const DAILY_LIMIT = Number(process.env.CHAT_RATE_LIMIT_DAILY ?? 200);
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(request: Request): Promise<Response> {
   let body: RequestBody;
@@ -24,6 +30,22 @@ export async function POST(request: Request): Promise<Response> {
   const { consentId, sessionId, message } = body;
   if (!consentId || !sessionId || !message) {
     return Response.json({ error: "consentId, sessionId, and message are required" }, { status: 400 });
+  }
+
+  const ip = clientIp(request);
+  const ipCheck = await checkRateLimit("chat_ip", ip, IP_WINDOW_MS, IP_LIMIT);
+  if (!ipCheck.allowed) {
+    return Response.json(
+      { error: "You've sent a lot of messages in a short time. Please wait a few minutes and try again." },
+      { status: 429 },
+    );
+  }
+  const dailyCheck = await checkRateLimit("chat_daily", "global", DAY_MS, DAILY_LIMIT);
+  if (!dailyCheck.allowed) {
+    return Response.json(
+      { error: "This demo has reached its message limit for today. Please try again tomorrow." },
+      { status: 429 },
+    );
   }
 
   const tenantId = await getTenantId();

@@ -1,6 +1,8 @@
-import { buildChatDisclosureLine } from "@frontdesk-kit/config";
+import { buildChatDisclosureLine, WEB_VOICE_MAX_DURATION_SECONDS } from "@frontdesk-kit/config";
 import { clientConfig } from "@/lib/clientConfig";
+import { getFeatureFlags } from "@/lib/env";
 import { ChatWidget } from "./components/ChatWidget";
+import { VoiceWidget } from "./components/VoiceWidget";
 
 const DAY_LABELS: Record<string, string> = {
   mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday",
@@ -8,6 +10,8 @@ const DAY_LABELS: Record<string, string> = {
 };
 
 export default function HomePage() {
+  const flags = getFeatureFlags();
+
   return (
     <main className="page">
       <h1>{clientConfig.businessName}</h1>
@@ -46,6 +50,13 @@ export default function HomePage() {
           disclosure={buildChatDisclosureLine(clientConfig.businessName)}
         />
       </section>
+
+      {flags.elevenLabs && (
+        <section>
+          <h2>Talk to the receptionist</h2>
+          <VoiceWidget maxDurationSeconds={WEB_VOICE_MAX_DURATION_SECONDS} />
+        </section>
+      )}
     </main>
   );
 }

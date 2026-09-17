@@ -3,10 +3,13 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
 import { verifyTwilioRequest } from "@/lib/twilioAuth";
 import { notifyOwnerOfCall } from "@/lib/ownerNotify";
+import { checkRateLimit, clientIp } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
 const TERMINAL_STATUSES = new Set(["completed", "no-answer", "busy", "failed", "canceled"]);
+const IP_LIMIT = Number(process.env.VOICE_RATE_LIMIT_PER_IP ?? 20);
+const IP_WINDOW_MS = Number(process.env.VOICE_RATE_LIMIT_WINDOW_MS ?? 10 * 60 * 1000);
 
 /**
  * Twilio's call status callback. Updates the call_log row written by
@@ -23,6 +26,11 @@ export async function POST(request: Request): Promise<Response> {
   const { valid, params } = await verifyTwilioRequest(request, env.TWILIO_AUTH_TOKEN);
   if (!valid) {
     return new Response("invalid signature", { status: 403 });
+  }
+
+  const ipCheck = await checkRateLimit("voice_ip", clientIp(request), IP_WINDOW_MS, IP_LIMIT);
+  if (!ipCheck.allowed) {
+    return new Response("rate limit exceeded", { status: 429 });
   }
 
   const tenantId = await getTenantId();

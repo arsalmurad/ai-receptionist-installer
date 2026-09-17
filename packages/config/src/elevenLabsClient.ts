@@ -12,6 +12,9 @@
 
 const BASE_URL = "https://api.elevenlabs.io/v1";
 
+/** Shared between provisioning (sets the agent's real limit) and the browser widget (displays it). */
+export const WEB_VOICE_MAX_DURATION_SECONDS = 120;
+
 export interface ElevenLabsAgent {
   agent_id: string;
   conversation_config?: {
@@ -19,9 +22,16 @@ export interface ElevenLabsAgent {
       first_message?: string;
       prompt?: { prompt?: string };
     };
+    conversation?: {
+      max_duration_seconds?: number;
+    };
   };
   platform_settings?: {
     privacy?: { record_voice?: boolean };
+    auth?: {
+      enable_auth?: boolean;
+      allowlist?: Array<{ hostname: string }>;
+    };
   };
 }
 
@@ -49,6 +59,11 @@ export interface UpdateAgentInput {
   firstMessage: string;
   systemPrompt: string;
   disableAudioSaving: boolean;
+  /** Require a signed URL to start a conversation - see docs/agents-platform/customization/authentication. */
+  requireAuth: boolean;
+  /** Hostnames allowed to embed the widget when requireAuth is on. */
+  allowedHostnames: string[];
+  maxDurationSeconds: number;
 }
 
 export async function updateAgent(apiKey: string, agentId: string, input: UpdateAgentInput): Promise<ElevenLabsAgent> {
@@ -58,9 +73,16 @@ export async function updateAgent(apiKey: string, agentId: string, input: Update
         first_message: input.firstMessage,
         prompt: { prompt: input.systemPrompt },
       },
+      conversation: {
+        max_duration_seconds: input.maxDurationSeconds,
+      },
     },
     platform_settings: {
       privacy: { record_voice: !input.disableAudioSaving },
+      auth: {
+        enable_auth: input.requireAuth,
+        allowlist: input.allowedHostnames.map((hostname) => ({ hostname })),
+      },
     },
   };
 
@@ -104,4 +126,23 @@ export async function registerTwilioCall(apiKey: string, input: RegisterCallInpu
     // not JSON - the body is already the raw TwiML string
   }
   return text;
+}
+
+/**
+ * Gets a short-lived signed URL for a browser to open a WebSocket
+ * conversation with a private (auth-required) agent, per
+ * https://elevenlabs.io/docs/agents-platform/customization/authentication.
+ * The URL embeds a conversation_signature and expires in 15 minutes -
+ * never cache or reuse it, request a fresh one per session.
+ */
+export async function getConversationSignedUrl(apiKey: string, agentId: string): Promise<string> {
+  const res = await elevenLabsFetch(
+    apiKey,
+    `/convai/conversation/get-signed-url?agent_id=${encodeURIComponent(agentId)}`,
+  );
+  if (!res.ok) {
+    throw new Error(`ElevenLabs getConversationSignedUrl failed: ${res.status} ${await res.text()}`);
+  }
+  const data = (await res.json()) as { signed_url: string };
+  return data.signed_url;
 }

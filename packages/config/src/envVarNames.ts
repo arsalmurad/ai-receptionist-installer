@@ -40,4 +40,14 @@ export const ENV_VAR_SPECS: EnvVarSpec[] = [
 
   { name: "CLOUDFLARE_ACCOUNT_ID", required: false, public: false, description: "Used by the CLI to deploy Workers." },
   { name: "CLOUDFLARE_API_TOKEN", required: false, public: false, description: "Used by CI to deploy Workers non-interactively." },
+
+  { name: "CHAT_RATE_LIMIT_PER_IP", required: false, public: false, description: "Chat messages allowed per IP per window. Default 10." },
+  { name: "CHAT_RATE_LIMIT_WINDOW_MS", required: false, public: false, description: "Chat per-IP window length in milliseconds. Default 600000 (10 minutes)." },
+  { name: "CHAT_RATE_LIMIT_DAILY", required: false, public: false, description: "Chat messages allowed across all visitors per day. Default 200." },
+  { name: "VOICE_RATE_LIMIT_PER_IP", required: false, public: false, description: "Voice webhook requests allowed per IP per window. Default 20." },
+  { name: "VOICE_RATE_LIMIT_WINDOW_MS", required: false, public: false, description: "Voice per-IP window length in milliseconds. Default 600000." },
+  { name: "OWNER_EMAIL_DAILY_CAP", required: false, public: false, description: "Owner notification emails allowed per day. Default 20; leads are still saved past the cap, only the email is skipped." },
+  { name: "WEB_VOICE_RATE_LIMIT_PER_IP", required: false, public: false, description: "Browser voice demo sessions allowed per IP per window. Default 3." },
+  { name: "WEB_VOICE_RATE_LIMIT_WINDOW_MS", required: false, public: false, description: "Browser voice demo per-IP window length in milliseconds. Default 600000." },
+  { name: "WEB_VOICE_DAILY_CAP", required: false, public: false, description: "Browser voice demo sessions allowed across all visitors per day. Default 30." },
 ];

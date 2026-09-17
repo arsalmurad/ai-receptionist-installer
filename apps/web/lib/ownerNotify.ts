@@ -1,6 +1,20 @@
 import { sendEmail } from "@frontdesk-kit/config";
 import { getEnv, getFeatureFlags } from "./env";
 import { clientConfig } from "./clientConfig";
+import { checkRateLimit } from "./rateLimit";
+
+const DAILY_EMAIL_LIMIT = Number(process.env.OWNER_EMAIL_DAILY_CAP ?? 20);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Caps owner notification emails per day so a burst of demo traffic (or
+ * abuse) cannot exhaust the Resend quota. The lead itself is always saved
+ * regardless - only the email is skipped past the cap.
+ */
+async function underDailyEmailCap(): Promise<boolean> {
+  const result = await checkRateLimit("owner_email_daily", clientConfig.clientId, DAY_MS, DAILY_EMAIL_LIMIT);
+  return result.allowed;
+}
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => {
@@ -32,6 +46,7 @@ export async function notifyOwnerOfLead(input: {
 }): Promise<NotifyResult> {
   const flags = getFeatureFlags();
   if (!flags.resend) return { sent: false, reason: "resend not configured" };
+  if (!(await underDailyEmailCap())) return { sent: false, reason: "daily owner email cap reached" };
 
   const env = getEnv();
   const rows = [
@@ -60,6 +75,7 @@ export async function notifyOwnerOfCall(input: {
 }): Promise<NotifyResult> {
   const flags = getFeatureFlags();
   if (!flags.resend) return { sent: false, reason: "resend not configured" };
+  if (!(await underDailyEmailCap())) return { sent: false, reason: "daily owner email cap reached" };
 
   const env = getEnv();
   try {

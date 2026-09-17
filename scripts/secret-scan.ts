@@ -34,19 +34,13 @@ function main() {
 
   const SENSITIVE_KEY_PATTERN = /(KEY|SECRET|TOKEN|PASSWORD)/i;
 
-  // TWILIO_AUTH_TOKEN is deliberately excluded: this project's demo
-  // deployment uses a fake, documented placeholder value for it (see
-  // README "no Twilio account"), not a real credential, so it is expected
-  // to appear in tracked docs.
-  const DOCUMENTED_PLACEHOLDER_KEYS = new Set(["TWILIO_AUTH_TOKEN"]);
-
   const envLocalPath = resolve(REPO_ROOT, ".env.local");
   if (existsSync(envLocalPath)) {
     const lines = readFileSync(envLocalPath, "utf-8").split("\n");
     const values = lines
       .filter((line) => {
         const key = (line.split("=")[0] ?? "").replace(/\r$/, "");
-        return SENSITIVE_KEY_PATTERN.test(key) && !DOCUMENTED_PLACEHOLDER_KEYS.has(key);
+        return SENSITIVE_KEY_PATTERN.test(key);
       })
       .map((line) => line.split("=").slice(1).join("=").trim())
       .filter((v) => v.length >= 8);

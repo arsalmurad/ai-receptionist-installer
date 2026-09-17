@@ -42,6 +42,18 @@ const optionalServerSchema = z.object({
   CLOUDFLARE_API_TOKEN: z.string().optional(),
 
   VERCEL_URL: z.string().optional(),
+
+  // Rate limit tuning - all optional, sensible defaults live next to where
+  // each is read. See docs/DESIGN_NOTES.md for why these exist.
+  CHAT_RATE_LIMIT_PER_IP: z.string().optional(),
+  CHAT_RATE_LIMIT_WINDOW_MS: z.string().optional(),
+  CHAT_RATE_LIMIT_DAILY: z.string().optional(),
+  VOICE_RATE_LIMIT_PER_IP: z.string().optional(),
+  VOICE_RATE_LIMIT_WINDOW_MS: z.string().optional(),
+  OWNER_EMAIL_DAILY_CAP: z.string().optional(),
+  WEB_VOICE_RATE_LIMIT_PER_IP: z.string().optional(),
+  WEB_VOICE_RATE_LIMIT_WINDOW_MS: z.string().optional(),
+  WEB_VOICE_DAILY_CAP: z.string().optional(),
 });
 
 const requiredPublicSchema = z.object({

@@ -134,13 +134,15 @@ export async function provisionCommand(clientId: string, options: ProvisionOptio
   step(5, "ElevenLabs agent configuration");
   const elevenApiKey = env("ELEVENLABS_API_KEY");
   const elevenAgentId = env("ELEVENLABS_AGENT_ID");
+  const siteUrl = options.url ?? env("NEXT_PUBLIC_SITE_URL");
+  const siteHostname = siteUrl ? new URL(siteUrl).hostname : undefined;
   if (!elevenApiKey || !elevenAgentId) {
     console.log("SKIPPED - ELEVENLABS_API_KEY or ELEVENLABS_AGENT_ID not set.");
   } else if (dryRun) {
-    console.log(`Would update agent ${elevenAgentId}'s first message, system prompt, and audio saving setting.`);
+    console.log(`Would update agent ${elevenAgentId}'s first message, system prompt, audio saving, auth, allowlist (${siteHostname ?? "no site URL"}), and max duration.`);
   } else {
     try {
-      const { changed } = await ensureAgentConfigured(elevenApiKey, elevenAgentId, config);
+      const { changed } = await ensureAgentConfigured(elevenApiKey, elevenAgentId, config, siteHostname);
       console.log(changed ? "Updated ElevenLabs agent." : "ElevenLabs agent already matches config - no change.");
     } catch (error) {
       console.log(`FAILED - ${(error as Error).message}`);
