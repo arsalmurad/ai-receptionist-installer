@@ -35,7 +35,15 @@ jobs:
         run: npx vercel build --prod --token="$VERCEL_TOKEN"
 
       - name: Deploy prebuilt output
-        run: npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        id: deploy
+        run: echo "url=$(npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")" >> "$GITHUB_OUTPUT"
+
+      # A custom .vercel.app alias does not follow new deployments on its
+      # own - only Vercel's own auto-managed alias does. Without this step
+      # the canonical URL keeps serving whatever was deployed the last time
+      # someone ran `vercel alias set` by hand. See docs/DESIGN_NOTES.md.
+      - name: Point the canonical alias at this deployment
+        run: npx vercel alias set "${{ steps.deploy.outputs.url }}" ai-receptionist-installer.vercel.app --token="$VERCEL_TOKEN"
 
   deploy-workers:
     runs-on: ubuntu-latest

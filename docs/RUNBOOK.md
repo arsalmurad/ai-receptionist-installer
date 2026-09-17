@@ -91,6 +91,18 @@ vercel build --prod
 vercel deploy --prebuilt --prod
 ```
 
+If the project uses a custom `.vercel.app` alias (one created by hand with
+`vercel alias set`, not Vercel's own auto-managed one), running the above
+does not repoint it - only `deploy.yml`'s equivalent step does that
+automatically. After a manual deploy, also run:
+
+```powershell
+vercel alias set <the-deployment-url-just-printed> <your-custom-alias>.vercel.app
+```
+
+or the canonical URL keeps serving the previous deployment even though the
+new one built and shipped successfully. See docs/DESIGN_NOTES.md.
+
 (`deploy.yml` does this automatically on push to `main`, once the
 `VERCEL_TOKEN`/`VERCEL_ORG_ID`/`VERCEL_PROJECT_ID` GitHub secrets are set for
 this repo - see the README's "what you still have to do by hand" list. A
