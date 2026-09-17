@@ -15,6 +15,11 @@ export const metadata = {
   title: "About this demo",
 };
 
+// Always reads the latest install_checks row at request time - a build-time
+// static render would freeze the "latest verify report" at whatever the
+// database held when this page was last built, not what it actually is now.
+export const dynamic = "force-dynamic";
+
 export default async function AboutThisDemoPage() {
   const tenantId = await getTenantId();
   const supabase = getSupabaseAdmin();

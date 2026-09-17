@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useConversation } from "@elevenlabs/react";
+import { ConversationProvider, useConversation } from "@elevenlabs/react";
 
 /**
  * Uses the ElevenLabs React SDK instead of the <elevenlabs-convai> embed
@@ -14,6 +14,14 @@ import { useConversation } from "@elevenlabs/react";
  * default - see docs/DESIGN_NOTES.md.
  */
 export function VoiceWidget({ maxDurationSeconds }: { maxDurationSeconds: number }) {
+  return (
+    <ConversationProvider>
+      <VoiceWidgetInner maxDurationSeconds={maxDurationSeconds} />
+    </ConversationProvider>
+  );
+}
+
+function VoiceWidgetInner({ maxDurationSeconds }: { maxDurationSeconds: number }) {
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [textDraft, setTextDraft] = useState("");
