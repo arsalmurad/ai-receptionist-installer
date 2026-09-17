@@ -1,32 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useConversation } from "@elevenlabs/react";
 
-const WIDGET_SCRIPT_SRC = "https://unpkg.com/@elevenlabs/convai-widget-embed";
-
-let widgetScriptPromise: Promise<void> | null = null;
-
-function loadWidgetScript(): Promise<void> {
-  if (!widgetScriptPromise) {
-    widgetScriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = WIDGET_SCRIPT_SRC;
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("could not load the voice widget script"));
-      document.body.appendChild(script);
-    });
-  }
-  return widgetScriptPromise;
-}
-
+/**
+ * Uses the ElevenLabs React SDK instead of the <elevenlabs-convai> embed
+ * widget, because the SDK exposes conversation status, speaking/listening
+ * mode, mute, and sendUserMessage (a text fallback) - the embed widget
+ * does not expose any of these as attributes. Neither the widget nor the
+ * SDK lets us pass custom getUserMedia constraints (echoCancellation,
+ * noiseSuppression, autoGainControl) per ElevenLabs' current docs, so
+ * browser-side noise suppression is whatever the OS/browser does by
+ * default - see docs/DESIGN_NOTES.md.
+ */
 export function VoiceWidget({ maxDurationSeconds }: { maxDurationSeconds: number }) {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [textDraft, setTextDraft] = useState("");
 
-  async function start() {
-    setBusy(true);
+  const conversation = useConversation({
+    onError: (message: unknown) => {
+      setError(typeof message === "string" ? message : "Something went wrong with the voice demo.");
+    },
+  });
+
+  const start = useCallback(async () => {
+    setStarting(true);
     setError(null);
     try {
       const res = await fetch("/api/voice/web-session", { method: "POST" });
@@ -35,29 +34,74 @@ export function VoiceWidget({ maxDurationSeconds }: { maxDurationSeconds: number
         setError(data.error ?? "Could not start the voice demo right now.");
         return;
       }
-      await loadWidgetScript();
-      setSignedUrl(data.signedUrl);
+      await conversation.startSession({ signedUrl: data.signedUrl });
     } catch {
       setError("Could not start the voice demo right now.");
     } finally {
-      setBusy(false);
+      setStarting(false);
     }
-  }
+  }, [conversation]);
+
+  const end = useCallback(() => {
+    void conversation.endSession();
+  }, [conversation]);
+
+  const toggleMute = useCallback(() => {
+    void conversation.setMuted(!conversation.isMuted);
+  }, [conversation]);
+
+  const sendText = useCallback(() => {
+    const text = textDraft.trim();
+    if (!text) return;
+    conversation.sendUserMessage(text);
+    setTextDraft("");
+  }, [textDraft, conversation]);
 
   const minutes = Math.round(maxDurationSeconds / 60);
+  const connected = conversation.status === "connected";
 
   return (
     <div className="card">
       <p className="muted">
         AI receptionist demo for a fictional plumbing company. Calls are capped at {minutes} minute{minutes === 1 ? "" : "s"}.
       </p>
-      {!signedUrl && (
-        <button className="button" onClick={start} disabled={busy}>
-          {busy ? "Starting..." : "Talk to the receptionist"}
+      <p className="muted">Works best in a quiet room. You can mute or type instead.</p>
+
+      {!connected && (
+        <button className="button" onClick={start} disabled={starting}>
+          {starting ? "Starting..." : "Talk to the receptionist"}
         </button>
       )}
+
       {error && <p style={{ color: "#b3261e" }}>{error}</p>}
-      {signedUrl && <elevenlabs-convai signed-url={signedUrl}></elevenlabs-convai>}
+
+      {connected && (
+        <div>
+          <p className="muted">
+            {conversation.isSpeaking ? "Agent is speaking..." : "Listening..."}
+            {conversation.isMuted ? " (muted)" : ""}
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <button className="button" onClick={toggleMute}>
+              {conversation.isMuted ? "Unmute" : "Mute"}
+            </button>
+            <button className="button" onClick={end}>
+              End call
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              value={textDraft}
+              onChange={(e) => setTextDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendText()}
+              placeholder="Or type instead of talking..."
+            />
+            <button className="button" onClick={sendText} disabled={!textDraft.trim()}>
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
