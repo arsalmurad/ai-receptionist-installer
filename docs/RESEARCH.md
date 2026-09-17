@@ -4,7 +4,7 @@ The deployment of autonomous AI front-desk systems represents a fundamental shif
 
 ## **1\. Empirical Failure Modes in Small Business AI Telephony**
 
-A rigorous analysis of deployment outcomes, derived from user reviews, operator telemetry, and forum complaints across platforms like Bland, Synthflow, and Retell, reveals that AI voice agents fail in highly specific, recurring patterns. These failures rarely stem from the underlying Large Language Model’s (LLM) intelligence, but rather from the acoustic, temporal, and social boundaries of telephony.
+A rigorous analysis of deployment outcomes, derived from user reviews, operator telemetry, and forum complaints across platforms like Bland, Synthflow, and Retell3, reveals that AI voice agents fail in highly specific, recurring patterns. These failures rarely stem from the underlying Large Language Model’s (LLM) intelligence, but rather from the acoustic, temporal, and social boundaries of telephony.
 
 It is necessary to note that regarding website chatbots specifically designed for small businesses, no reliable source found empirical failure mode data comparable to the deep telemetry available for voice agents. The industry discourse and operator complaints focus almost entirely on voice AI due to the real-time constraints of telephony. Consequently, the empirical ranking below focuses on voice receptionists.
 
@@ -105,7 +105,7 @@ Because an AI voice agent functions by streaming audio to a cloud provider (e.g.
 
 ### **3.4 The Universal "Safe Harbor" Greeting**
 
-To ensure compliance across all 50 states regarding both AI transparency and all-party call recording consent, the system must deploy a standardized opening line before any substantive data is collected. Trying to route different scripts based on the caller's area code is technically fragile and legally risky.
+To ensure compliance across all 50 states regarding both AI transparency and all-party call recording consent, the system must deploy a standardized opening line before any substantive data is collected.
 
 The safest implementation requires the agent to explicitly identify itself as AI and declare the recording status in the very first sentence10. A compliant opening formulation is:
 
@@ -204,6 +204,12 @@ Based on the empirical evidence, legal parameters, and architectural constraints
 
 #### **Works cited**
 
+Only sources actually cited by a number in the report above are listed here.
+Numbering is preserved from the original draft, so it is not consecutive -
+a handful of sources that were gathered but never ended up backing a
+specific claim were removed rather than renumbered, to avoid any risk of
+mismatching a citation to the wrong source.
+
 > 1. the 7 things an AI receptionist actually needs to do well in 2026, and, [https://www.reddit.com/r/AIReceptionists/comments/1tc6od5/the\_7\_things\_an\_ai\_receptionist\_actually\_needs\_to/](https://www.reddit.com/r/AIReceptionists/comments/1tc6od5/the_7_things_an_ai_receptionist_actually_needs_to/)  
 > 2. How ElevenLabs Streams Voice in Real Time: The Top Engineering, [https://codingclutch.com/how-elevenlabs-streams-voice-real-time/](https://codingclutch.com/how-elevenlabs-streams-voice-real-time/)  
 > 3. My experience testing voice AI agents (Bland, Synthflow, Retell), [https://www.reddit.com/r/AI\_Agents/comments/1nwlk5z/my\_experience\_testing\_voice\_ai\_agents\_bland/](https://www.reddit.com/r/AI_Agents/comments/1nwlk5z/my_experience_testing_voice_ai_agents_bland/)  
@@ -215,36 +221,19 @@ Based on the empirical evidence, legal parameters, and architectural constraints
 > 9. List workspace tickets | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/api-reference/triage-tickets/list-for-workspace](https://elevenlabs.io/docs/eleven-agents/api-reference/triage-tickets/list-for-workspace)  
 > 10. A Developer's Checklist for AI Voice Agent Disclosure Compliance, [https://dev.to/ecosmob\_technologies/a-developers-checklist-for-ai-voice-agent-disclosure-compliance-2il5](https://dev.to/ecosmob_technologies/a-developers-checklist-for-ai-voice-agent-disclosure-compliance-2il5)  
 > 11. FCC Requires Consent for AI-Generated Cloned Voice Calls | 2024, [https://www.mcdermottlaw.com/insights/fcc-requires-consent-for-ai-generated-cloned-voice-calls/](https://www.mcdermottlaw.com/insights/fcc-requires-consent-for-ai-generated-cloned-voice-calls/)  
-> 12. AI Voice Agent Compliance: TCPA Rules, FCC Requirements, [https://www.henson-legal.com/ai-voice-compliance](https://www.henson-legal.com/ai-voice-compliance)  
-> 13. TCPA Compliance for Voice AI: Consent, DNC, and Revocation, [https://www.plura.ai/articles/tcpa-compliant-conversational-ai](https://www.plura.ai/articles/tcpa-compliant-conversational-ai)  
-> 14. AI Disclosure Requirements for Voice Agents \- Thoughtly, [https://thoughtly.com/blog/ai-disclosure-requirements-what-to-tell-callers](https://thoughtly.com/blog/ai-disclosure-requirements-what-to-tell-callers)  
-> 15. FCC rules that consent is required for AI-generated voices in, [https://bankingjournal.aba.com/2024/02/fcc-rules-that-consent-required-for-ai-generated-voices-in-outbound-calls/](https://bankingjournal.aba.com/2024/02/fcc-rules-that-consent-required-for-ai-generated-voices-in-outbound-calls/)  
 > 16. Acceptable Use Policy \- MagicBlocks, [https://magicblocks.ai/aup](https://magicblocks.ai/aup)  
 > 17. Terms of Service \- Navda AI, [https://www.navda-ai.com/terms-of-service.html](https://www.navda-ai.com/terms-of-service.html)  
-> 18. The 2026 TCPA Compliance Playbook for Voice AI Outbound, [https://www.retellai.com/blog/tcpa-compliance-playbook-voice-ai-outbound](https://www.retellai.com/blog/tcpa-compliance-playbook-voice-ai-outbound)  
 > 19. Is an AI Receptionist Legal? 2026 Disclosure Rules \- AIEmply, [https://aiemply.com/blog/ai-receptionist-disclosure-laws](https://aiemply.com/blog/ai-receptionist-disclosure-laws)  
-> 20. FCC NPRM 24-84: Pending AI-Call Disclosure Rules \- Zian AI, [https://www.zian.ai/fcc-nprm-24-84-ai-call-disclosure-rules/](https://www.zian.ai/fcc-nprm-24-84-ai-call-disclosure-rules/)  
-> 21. Do I actually need to tell callers they're talking to an AI? \- Reddit, [https://www.reddit.com/r/n8n/comments/1nf5ofi/do\_i\_actually\_need\_to\_tell\_callers\_theyre\_talking/](https://www.reddit.com/r/n8n/comments/1nf5ofi/do_i_actually_need_to_tell_callers_theyre_talking/)  
-> 22. The 5 Best AI Voice Agents (By Type & Function) \[2026\] \- Leland, [https://www.joinleland.com/library/a/ai-voice-agents](https://www.joinleland.com/library/a/ai-voice-agents)  
-> 23. AI Chatbots: How to Address Five Key Legal Risks \- Wiley Rein, [https://www.wiley.law/alert-AI-Chatbots-How-to-Address-Five-Key-Legal-Risks](https://www.wiley.law/alert-AI-Chatbots-How-to-Address-Five-Key-Legal-Risks)  
 > 24. Twilio Media Streams \+ ElevenLabs \+ OpenAI (Python), [https://stackoverflow.com/questions/79624529/twilio-media-streams-elevenlabs-openai-python-call-connects-transcripts](https://stackoverflow.com/questions/79624529/twilio-media-streams-elevenlabs-openai-python-call-connects-transcripts)  
-> 25. Twilio WebSocket \+ OpenAI \+ ElevenLabs Audio Streaming Issue, [https://community.latenode.com/t/python-real-time-voice-bot-twilio-websocket-openai-elevenlabs-audio-streaming-issue/36927](https://community.latenode.com/t/python-real-time-voice-bot-twilio-websocket-openai-elevenlabs-audio-streaming-issue/36927)  
 > 26. elevenlabs-python/src/elevenlabs/speech\_to\_speech/client.py at main, [https://github.com/elevenlabs/elevenlabs-python/blob/main/src/elevenlabs/speech\_to\_speech/client.py](https://github.com/elevenlabs/elevenlabs-python/blob/main/src/elevenlabs/speech_to_speech/client.py)  
-> 27. Bad API Quality \- Help : r/ElevenLabs \- Reddit, [https://www.reddit.com/r/ElevenLabs/comments/1epgybg/bad\_api\_quality\_help/](https://www.reddit.com/r/ElevenLabs/comments/1epgybg/bad_api_quality_help/)  
-> 28. API Response Time \[stream-input\] · Issue \#134 · elevenlabs ... \- GitHub, [https://github.com/elevenlabs/elevenlabs-python/issues/134](https://github.com/elevenlabs/elevenlabs-python/issues/134)  
-> 29. Python API vs REST API · Issue \#111 · elevenlabs ... \- GitHub, [https://github.com/elevenlabs/elevenlabs-python/issues/111](https://github.com/elevenlabs/elevenlabs-python/issues/111)  
 > 30. Call resource | Twilio, [https://www.twilio.com/docs/voice/api/call-resource](https://www.twilio.com/docs/voice/api/call-resource)  
 > 31. HIPAA | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/legal/hipaa](https://elevenlabs.io/docs/eleven-agents/legal/hipaa)  
 > 32. Zero Retention Mode (per-agent) | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/customization/privacy/zrm](https://elevenlabs.io/docs/eleven-agents/customization/privacy/zrm)  
 > 33. Model Context Protocol | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/customization/tools/mcp](https://elevenlabs.io/docs/eleven-agents/customization/tools/mcp)  
 > 34. Get agent | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/api-reference/agents/get](https://elevenlabs.io/docs/eleven-agents/api-reference/agents/get)  
-> 35. Privacy | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/customization/privacy](https://elevenlabs.io/docs/eleven-agents/customization/privacy)  
 > 36. Row Level Security | Supabase Docs, [https://supabase.com/docs/guides/database/postgres/row-level-security](https://supabase.com/docs/guides/database/postgres/row-level-security)  
 > 37. A runnable reproduction of the Next.js \+ Supabase RLS leak (red on, [https://github.com/vercel/next.js/discussions/96888](https://github.com/vercel/next.js/discussions/96888)  
 > 38. \[Feature Request\] AST-based Static RLS Linter & Hybrid Search, [https://github.com/supabase/cli/issues/5992](https://github.com/supabase/cli/issues/5992)  
 > 39. Secret leak prevention out of the box · vercel next.js \- GitHub, [https://github.com/vercel/next.js/discussions/33386](https://github.com/vercel/next.js/discussions/33386)  
 > 40. Confused about usage of process.env · Issue \#22266 · vercel/next.js, [https://github.com/vercel/next.js/issues/22266](https://github.com/vercel/next.js/issues/22266)  
-> 41. \[next.config.js\] environment passes into the client code \#24741, [https://github.com/vercel/next.js/discussions/24741](https://github.com/vercel/next.js/discussions/24741)  
-> 42. Environment variables exposed on the client · vercel next.js \- GitHub, [https://github.com/vercel/next.js/discussions/23980](https://github.com/vercel/next.js/discussions/23980)  
-> 43. Retrieve Domain \- Resend, [https://resend.com/docs/api-reference/domains/get-domain](https://resend.com/docs/api-reference/domains/get-domain)  
-> 44. Create agent | ElevenLabs Documentation, [https://elevenlabs.io/docs/eleven-agents/api-reference/agents/create](https://elevenlabs.io/docs/eleven-agents/api-reference/agents/create)
+> 43. Retrieve Domain \- Resend, [https://resend.com/docs/api-reference/domains/get-domain](https://resend.com/docs/api-reference/domains/get-domain)

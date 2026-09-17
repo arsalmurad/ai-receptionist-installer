@@ -14,7 +14,7 @@ Small businesses miss calls and website questions after hours. An AI receptionis
 
 ## Try it in 2 minutes
 
-- Website: https://frontdesk-kit-rho.vercel.app
+- Website: https://ai-receptionist-installer.vercel.app
 - Ask the chat a question about hours or services.
 - Ask it a price it doesn't list. It won't guess. It takes your details instead so someone can follow up.
 - Try "Talk to the receptionist" to speak with the same AI agent in your browser, no phone call needed.
@@ -49,7 +49,7 @@ Small businesses miss calls and website questions after hours. An AI receptionis
 Sample output, from the live install:
 
 ```
-$ npm run frontdesk -- verify --client demo-plumbing --url https://frontdesk-kit-rho.vercel.app
+$ npm run frontdesk -- verify --client demo-plumbing --url https://ai-receptionist-installer.vercel.app
 
 GATE                   STATUS   REASON
 ---------------------  -------  ----------------------------------------
@@ -194,4 +194,4 @@ The wiring follows specific findings in `docs/RESEARCH.md`, not habit: the discl
 - A real Twilio account for any client that wants live phone calls, and the manual step in `docs/FALLBACK_TWIML.md`, see `docs/RUNBOOK.md` section 5.
 - The live phone call test (`docs/RUNBOOK.md` section 8), once a Twilio account exists.
 
-`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` are already set as GitHub secrets and the deploy pipeline is green, so nothing is blocking a push to `main` from deploying.
+Everything the deploy pipeline needs is already set up, so nothing is blocking a push to `main` from deploying.

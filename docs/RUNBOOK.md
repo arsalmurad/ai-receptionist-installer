@@ -56,7 +56,7 @@ steps here for reference or manual troubleshooting):**
 2. Turn on **Enable authentication** (this is `platform_settings.auth.enable_auth`
    via the API) so the agent only accepts a signed session, not a public agent id.
 3. Under **Allowlist**, add the deployment's hostname (for example
-   `frontdesk-kit-rho.vercel.app`) - this is an exact hostname match, so add
+   `ai-receptionist-installer.vercel.app`) - this is an exact hostname match, so add
    subdomains separately if you use any.
 4. Go to the **Advanced** tab, find **Call limits**, and set **Max conversation
    duration** to 120 seconds (2 minutes) - this is
