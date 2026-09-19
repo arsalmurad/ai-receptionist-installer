@@ -21,6 +21,7 @@ import { getSupabaseAdmin } from "../lib/supabase";
 import { buildDesiredAgentState, agentMatchesDesired } from "../lib/elevenLabsProvision";
 import { buildDesiredUrls, needsTwilioUpdate } from "../lib/twilioProvision";
 import { scanForSecrets } from "../lib/secretScan";
+import { checkSeoBasics } from "../lib/seoCheck";
 import { runGate, Skip, Fail } from "../lib/gate";
 import { printGateTable, writeMarkdownReport, overallStatus, type GateResult } from "../lib/report";
 
@@ -314,6 +315,11 @@ export async function verifyCommand(clientId: string, options: VerifyOptions): P
         ? `got 429 within ${limit + 1} messages sent under an isolated verify-only test key (CHAT_RATE_LIMIT_PER_IP=${limit}); exercises the real public per-IP limit without touching any real visitor's window or the shared daily quota`
         : `got 429 within ${limit + 1} messages sent from one client (CHAT_RATE_LIMIT_PER_IP=${limit}); tests the real per-IP limit from a single client rather than a spoofable test-IP header, since Vercel already overwrites x-forwarded-for and does not forward external IPs`;
     }),
+  );
+
+  // Gate 13: SEO basics - shared with `frontdesk check`, see portableChecks.ts
+  results.push(
+    url ? await checkSeoBasics(url, config.businessName) : { gate: "13 SEO basics", status: "SKIPPED", reason: "no --url given" },
   );
 
   printGateTable(results);
