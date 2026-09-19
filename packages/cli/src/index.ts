@@ -5,6 +5,7 @@ import { initCommand } from "./commands/init";
 import { provisionCommand } from "./commands/provision";
 import { verifyCommand } from "./commands/verify";
 import { doctorCommand } from "./commands/doctor";
+import { checkCommand } from "./commands/check";
 
 loadRootEnv();
 
@@ -37,6 +38,15 @@ program
   .description("Run every install gate and print a PASS/FAIL/SKIPPED table")
   .action(async (opts: { client: string; url?: string; json?: boolean }) => {
     await verifyCommand(opts.client, opts);
+  });
+
+program
+  .command("check")
+  .requiredOption("--target <path>", "path to a target config JSON file (see examples/target-config.example.json)")
+  .option("--json", "also print machine-readable JSON output")
+  .description("Run the portable install gates (URL + vendor credentials only) against any AI receptionist install, not just this repo's own")
+  .action(async (opts: { target: string; json?: boolean }) => {
+    await checkCommand(opts);
   });
 
 program

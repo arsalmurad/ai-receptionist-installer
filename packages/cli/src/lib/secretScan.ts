@@ -28,6 +28,17 @@ export interface SecretScanFinding {
   matched: string;
 }
 
+/** Secret values under this length are too likely to collide with ordinary code, so only names are checked for them. */
+const MIN_VALUE_LENGTH = 8;
+
+export function secretNeedles(names: string[], values: string[]): string[] {
+  return [...names, ...values.filter((v) => v.length >= MIN_VALUE_LENGTH)];
+}
+
+export function findNeedlesInText(content: string, needles: string[]): string[] {
+  return needles.filter((needle) => content.includes(needle));
+}
+
 /**
  * Scans a build output directory (e.g. apps/web/.next/static) for
  * server-only env var names and actual secret values, per the build spec's
@@ -36,7 +47,7 @@ export interface SecretScanFinding {
  */
 export function scanForSecrets(dir: string, names: string[], values: string[]): SecretScanFinding[] {
   const findings: SecretScanFinding[] = [];
-  const needles = [...names, ...values.filter((v) => v.length >= 8)];
+  const needles = secretNeedles(names, values);
   if (needles.length === 0) return findings;
 
   for (const file of listFiles(dir)) {
@@ -46,10 +57,8 @@ export function scanForSecrets(dir: string, names: string[], values: string[]): 
     } catch {
       continue;
     }
-    for (const needle of needles) {
-      if (content.includes(needle)) {
-        findings.push({ file, matched: needle });
-      }
+    for (const matched of findNeedlesInText(content, needles)) {
+      findings.push({ file, matched });
     }
   }
   return findings;
