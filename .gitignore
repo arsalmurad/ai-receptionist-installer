@@ -53,6 +53,7 @@ coverage/
 
 .vercel
 .env*
+!.env.example
 
 # local AI coding assistant state
 .claude/

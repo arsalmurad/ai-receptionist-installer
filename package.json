@@ -1,8 +1,16 @@
 {
-  "name": "frontdesk-kit",
+  "name": "ai-receptionist-installer",
   "private": true,
   "version": "0.1.0",
   "description": "Installer and verification toolkit for per-client AI front desk installs",
+  "license": "MIT",
+  "author": "Muhammad Arsal Murad",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arsalmurad/ai-receptionist-installer.git"
+  },
+  "homepage": "https://github.com/arsalmurad/ai-receptionist-installer#readme",
+  "bugs": "https://github.com/arsalmurad/ai-receptionist-installer/issues",
   "workspaces": [
     "apps/*",
     "packages/*",
@@ -11,6 +19,7 @@
   "scripts": {
     "frontdesk": "tsx packages/cli/src/index.ts",
     "dev": "npm run dev -w apps/web",
+    "demo": "tsx scripts/demo.ts",
     "build": "npm run build -w apps/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "eslint . --max-warnings=0",
