@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { getTenantId } from "@/lib/tenant";
+import { clientConfig } from "@/lib/clientConfig";
 
 const REPO_URL = "https://github.com/arsalmurad/ai-receptionist-installer";
 const RUNBOOK_URL = `${REPO_URL}/blob/main/docs/RUNBOOK.md`;
@@ -11,8 +14,12 @@ interface InstallCheckResult {
   reason: string;
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "About this demo",
+  description: "What ai-receptionist-installer is, what this demo site is, and the latest verify report proving the install is safe.",
+  // Overrides the root layout's demo-wide noindex - this one page should
+  // stay indexable even though the rest of a demo install is not.
+  robots: { index: true, follow: true },
 };
 
 // Always reads the latest install_checks row at request time - a build-time
@@ -21,6 +28,10 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AboutThisDemoPage() {
+  // Only the fictional demo install explains itself this way - a real
+  // client's site has no reason to serve this page at all.
+  if (!clientConfig.demo) notFound();
+
   const tenantId = await getTenantId();
   const supabase = getSupabaseAdmin();
 
@@ -42,7 +53,7 @@ export default async function AboutThisDemoPage() {
         <h2>What this is</h2>
         <p>
           ai-receptionist-installer is a toolkit that sets up an AI chat assistant and phone receptionist for
-          a small business, then runs 12 automated checks that prove the install is safe and working.
+          a small business, then runs 13 automated checks that prove the install is safe and working.
         </p>
       </section>
 

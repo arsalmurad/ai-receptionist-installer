@@ -21,6 +21,15 @@ export const emergencyRuleSchema = z.object({
   instruction: z.string().min(1),
 });
 
+/** schema.org PostalAddress fields - see https://schema.org/PostalAddress. Optional: only used for LocalBusiness JSON-LD, and Google's rich-results eligibility needs it, but schema.org itself does not require it. */
+export const addressSchema = z.object({
+  streetAddress: z.string().min(1),
+  addressLocality: z.string().min(1),
+  addressRegion: z.string().min(1),
+  postalCode: z.string().min(1),
+  addressCountry: z.string().min(1),
+});
+
 export const clientConfigSchema = z.object({
   clientId: z.string().min(1),
   businessName: z.string().min(1),
@@ -37,6 +46,18 @@ export const clientConfigSchema = z.object({
   emergencyRules: z.array(emergencyRuleSchema),
   ownerNotificationEmail: z.string().email(),
   disclosureVersion: z.string().min(1),
+  /** Street address for LocalBusiness JSON-LD. Optional - omitted from the JSON-LD entirely when not set. */
+  address: addressSchema.optional(),
+  /** Meta description override, 160 chars or fewer. Falls back to a generated one from businessName + serviceArea when unset. */
+  seoDescription: z.string().min(1).max(160).optional(),
+  /**
+   * True only for this repo's own fictional demo install. Real client
+   * installs must never set this - it hides the demo banner, 404s
+   * /about-this-demo, and tells search engines not to index the site
+   * (except /about-this-demo itself, which stays indexable). See
+   * docs/DESIGN_NOTES.md and README "SEO".
+   */
+  demo: z.boolean().optional(),
 });
 
 export type ClientConfig = z.infer<typeof clientConfigSchema>;

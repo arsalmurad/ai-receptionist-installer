@@ -37,5 +37,13 @@
     { "keyword": "gas smell", "instruction": "This is outside plumbing scope and can be dangerous. Tell the caller to leave the property and call their gas utility or 911 immediately. Do not attempt to schedule a plumbing visit for this." }
   ],
   "ownerNotificationEmail": "arsalmurad234@gmail.com",
-  "disclosureVersion": "v1"
+  "disclosureVersion": "v1",
+  "address": {
+    "streetAddress": "482 Fairview Ave",
+    "addressLocality": "Fairview",
+    "addressRegion": "NY",
+    "postalCode": "10001",
+    "addressCountry": "US"
+  },
+  "demo": true
 }

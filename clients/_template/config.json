@@ -27,5 +27,14 @@
     { "keyword": "emergency", "instruction": "Treat as urgent: offer the soonest available slot and collect a callback number." }
   ],
   "ownerNotificationEmail": "owner@example.com",
-  "disclosureVersion": "v1"
+  "disclosureVersion": "v1",
+  "seoDescription": "Replace with a 160-character-or-fewer summary, or remove this field to generate one automatically.",
+  "address": {
+    "streetAddress": "Replace with the real street address",
+    "addressLocality": "Replace with the real city",
+    "addressRegion": "Replace with the real state/region",
+    "postalCode": "Replace with the real postal code",
+    "addressCountry": "US"
+  },
+  "demo": false
 }
