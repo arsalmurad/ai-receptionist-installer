@@ -51,12 +51,18 @@ export default function HomePage() {
         />
       </section>
 
-      {flags.elevenLabs && (
-        <section>
-          <h2>Talk to the receptionist</h2>
+      <section>
+        <h2>Talk to the receptionist</h2>
+        {flags.elevenLabs ? (
           <VoiceWidget maxDurationSeconds={WEB_VOICE_MAX_DURATION_SECONDS} />
-        </section>
-      )}
+        ) : (
+          <p className="muted card">
+            Voice is disabled on this install. It needs an ElevenLabs API key and an agent id
+            (ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID) - see docs/ENV_CONTRACT.md. Chat above works without
+            them.
+          </p>
+        )}
+      </section>
     </main>
   );
 }
