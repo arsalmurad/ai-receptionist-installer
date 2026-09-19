@@ -21,9 +21,10 @@ A trimmed sample of what `verify` prints against the live demo below:
 GATE                   STATUS   REASON
 ---------------------  -------  ----------------------------------------
 1 typecheck+build      PASS     typecheck and build both exited 0
-6 elevenlabs privacy   PASS     first message, system prompt, audio saving, auth required, domain allowlist, and max duration all match
+6 elevenlabs privacy   PASS     first message, system prompt, audio saving, auth required, domain allowlist, max duration, turn eagerness, turn timeout, and skip_turn all match
 9 RLS isolation        PASS     tenant A user could not read tenant B rows
-12 rate limits         PASS     got 429 within 11 messages sent from one client (CHAT_RATE_LIMIT_PER_IP=10)
+12 rate limits         PASS     got 429 within 11 messages sent under an isolated verify-only test key
+13 SEO basics          PASS     title, meta description, canonical, sitemap.xml, robots.txt, and LocalBusiness JSON-LD all present
 
 Overall: PASS
 ```
@@ -107,13 +108,14 @@ GATE                   STATUS   REASON
 10 media-gate          PASS     unsigned and expired both rejected, valid signature accepted
 11 llm-gateway auth    PASS     401 without shared secret, 200 with it (not 401, so the secret was accepted)
 12 rate limits         PASS     got 429 within 11 messages sent under an isolated verify-only test key (CHAT_RATE_LIMIT_PER_IP=10); exercises the real public per-IP limit without touching any real visitor's window or the shared daily quota
+13 SEO basics          PASS     title and meta description present, canonical present, sitemap.xml and robots.txt reachable, JSON-LD parses with @type "LocalBusiness" (title differs between / and /about-this-demo)
 
 Overall: PASS
 ```
 
 Gate 3 used to be able to FAIL here if `verify` had already been run enough times that day to spend the shared daily chat quota - fixed by giving `verify` its own `VERIFY_TOKEN`-authenticated rate-limit namespace and a mock-provider reply, so it never competes with real visitors for that budget. See `docs/DESIGN_NOTES.md`.
 
-Full report: `reports/demo-plumbing-2026-09-18.md`. The phone webhook simulator's output against the same install: `reports/simulate-call-2026-09-17.txt`.
+Full report: `reports/demo-plumbing-2026-09-19.md`. The same 9 portable gates, run standalone with `frontdesk check --target`: `reports/live-demo-plumbing-2026-09-19.md`. The phone webhook simulator's output against the same install: `reports/simulate-call-2026-09-17.txt`.
 
 ## Known limits
 
