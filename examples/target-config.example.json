@@ -1,0 +1,25 @@
+{
+  "name": "example-client",
+  "baseUrl": "https://example-client.example.com",
+  "expectedTitleContains": "Example Client",
+  "chatRateLimitPerIp": 10,
+  "verifyToken": "paste the install's VERIFY_TOKEN here if you have it - keeps this check off the public chat quota",
+  "twilio": {
+    "authToken": "paste the Twilio auth token here to enable the webhook signature check",
+    "accountSid": "paste the Twilio account SID here too, plus the two fields below, to also enable the phone number config check",
+    "phoneNumberSid": "",
+    "fallbackTwimlUrl": "https://handler.twilio.com/twiml/your-fallback-bin"
+  },
+  "elevenLabs": {
+    "apiKey": "paste an ElevenLabs API key here to enable the voice agent settings check",
+    "agentId": "paste the agent id here too"
+  },
+  "resend": {
+    "apiKey": "paste a Resend API key here to enable the email domain check",
+    "fromDomain": "notify.example-client.example.com"
+  },
+  "secrets": {
+    "names": ["SUPABASE_SERVICE_ROLE_KEY", "LLM_GATEWAY_SHARED_SECRET"],
+    "values": []
+  }
+}
