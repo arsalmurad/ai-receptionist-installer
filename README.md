@@ -1,8 +1,11 @@
 # AI Receptionist Installer
 
+[![CI](https://github.com/arsalmurad/ai-receptionist-installer/actions/workflows/ci.yml/badge.svg)](https://github.com/arsalmurad/ai-receptionist-installer/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Who it's for: an agency or contractor who installs the same AI receptionist (website, chat, phone agent) for many small businesses.
 
-What it does: one command sets up a new business, a second command checks the live install against 12 pass/fail checks, and a third rechecks live installs later for anything that broke.
+What it does: one command sets up a new business, a second command checks the live install against 13 pass/fail checks, and a third rechecks live installs later for anything that broke. Nine of those checks also run standalone against any AI receptionist install (not just one built from this repo) with `frontdesk check --target` - see "Check any install" below.
 
 Why: when you run 20 of these, the failures are quiet (a webhook pointing at an old URL, a key leaking into browser code, one client seeing another's data). This finds them before the client does.
 
@@ -34,8 +37,9 @@ Small businesses miss calls and website questions after hours. An AI receptionis
 ## What this does
 
 - It sets up a new business's install in a few commands.
-- It then runs 12 automated checks that prove the install is safe and working, and prints a pass or fail report.
+- It then runs 13 automated checks that prove the install is safe and working, and prints a pass or fail report.
 - Later, it rechecks live installs for anything that has drifted since setup.
+- Nine of those 13 checks also work standalone against any AI receptionist install, not just one this tool set up - see "Check any install".
 
 ## Try it in 2 minutes
 
@@ -66,22 +70,23 @@ A `frontdesk verify` run, visible on the dashboard:
 
 ## The checks
 
-`frontdesk verify` runs all 12 against a live install and prints PASS, FAIL, or SKIPPED (skipped means a dependency, like a phone account, isn't set up yet, not that the check passed).
+`frontdesk verify` runs all 13 against a live install and prints PASS, FAIL, or SKIPPED (skipped means a dependency, like a phone account, isn't set up yet, not that the check passed). Rows marked "portable" also run standalone via `frontdesk check --target` against any install, not only ones built from this repo - see "Check any install".
 
-| # | Check | What it proves |
-| --- | --- | --- |
-| 1 | Code builds and typechecks | Nothing obviously broken went live |
-| 2 | Key pages load | The website and the dashboard login page are actually reachable |
-| 3 | Chat consent gate | The chat assistant won't talk before showing its AI disclosure |
-| 4 | Phone webhook signature | A stranger can't send fake calls to the phone line |
-| 5 | Phone number configuration | The phone number points at this business's install, not an old one |
-| 6 | Voice agent settings | The phone and browser voice agent require a signed session, restrict which website can use them, cap call length, and don't record audio |
-| 7 | Email domain status | The domain that sends owner alerts is still verified, so alerts aren't silently failing |
-| 8 | Secret scan | No passwords or keys end up in the website code sent to visitors' browsers |
-| 9 | Data isolation | One business can't see another business's leads, chats, or calls |
-| 10 | Shared link signing | A shared file link can't be guessed or reused after it expires |
-| 11 | AI gateway authentication | Only this website can use the AI behind the chat assistant, not anyone who finds its address |
-| 12 | Rate limits | A stranger can't run up the bill by hammering the chat assistant |
+| # | Check | What it proves | Portable |
+| --- | --- | --- | --- |
+| 1 | Code builds and typechecks | Nothing obviously broken went live | |
+| 2 | Key pages load | The website and the dashboard login page are actually reachable | yes |
+| 3 | Chat consent gate | The chat assistant won't talk before showing its AI disclosure | yes |
+| 4 | Phone webhook signature | A stranger can't send fake calls to the phone line | yes |
+| 5 | Phone number configuration | The phone number points at this business's install, not an old one | yes |
+| 6 | Voice agent settings | The phone and browser voice agent require a signed session, restrict which website can use them, cap call length, and don't record audio | yes |
+| 7 | Email domain status | The domain that sends owner alerts is still verified, so alerts aren't silently failing | yes |
+| 8 | Secret scan | No passwords or keys end up in the website code sent to visitors' browsers | yes |
+| 9 | Data isolation | One business can't see another business's leads, chats, or calls | |
+| 10 | Shared link signing | A shared file link can't be guessed or reused after it expires | |
+| 11 | AI gateway authentication | Only this website can use the AI behind the chat assistant, not anyone who finds its address | |
+| 12 | Rate limits | A stranger can't run up the bill by hammering the chat assistant | yes |
+| 13 | SEO basics | The site has a title, meta description, canonical tag, sitemap, robots.txt, and valid LocalBusiness structured data | yes |
 
 Sample output, from the live install:
 
@@ -120,6 +125,40 @@ Voice agents can still mishear in a noisy room. What this install does about it:
 - ElevenLabs' widget and SDK do not currently expose a way to pass browser microphone constraints (echo cancellation, noise suppression, automatic gain control) directly, so noise handling on the input side is whatever the browser does by default. See `docs/DESIGN_NOTES.md`.
 
 This has not been tested on a real phone line yet, only in the browser - see "What's actually been run, and what hasn't" below.
+
+## Check any install
+
+Nine of the 13 checks only need a live URL plus whichever vendor credentials you have - they work against any AI receptionist install that follows this project's conventions (the consent-gate contract, an ElevenLabs voice agent, a Twilio voice webhook), not only ones this repo provisioned. This is the part you can use on day one without adopting the whole stack.
+
+```powershell
+npm run frontdesk -- check --target path/to/target-config.json
+```
+
+`examples/target-config.example.json` shows every field. Every credential block is optional - the command skips whatever it can't test instead of failing:
+
+```json
+{
+  "name": "example-client",
+  "baseUrl": "https://example-client.example.com",
+  "twilio": { "authToken": "..." },
+  "elevenLabs": { "apiKey": "...", "agentId": "..." },
+  "resend": { "apiKey": "...", "fromDomain": "..." }
+}
+```
+
+With just `name` and `baseUrl`, it still runs pages-load, consent-gate, rate-limit, and SEO checks - the ones that need no credentials at all. Add whichever vendor credentials you have for the rest. The voice agent check is structural (audio saving off, auth required, sane call cap, documented turn-taking values) rather than an exact match against one business's config, since a target install's content is unknown - see `docs/DESIGN_NOTES.md`.
+
+## SEO
+
+Every client site generates its own SEO metadata from `clients/<id>/config.json` at build time - no per-client hand-editing:
+
+- Title, meta description (from `seoDescription`, or generated from the business name and service area if unset), canonical tag, Open Graph and Twitter tags.
+- `sitemap.xml` and `robots.txt` (Next.js's built-in conventions, `apps/web/app/sitemap.ts` and `apps/web/app/robots.ts`).
+- LocalBusiness JSON-LD (name, phone, service area, hours, and address if the client config has one) - checked against schema.org's LocalBusiness docs and Google's structured data guidelines for what's required (`name`, `address`) versus recommended (`telephone`, `url`, `openingHoursSpecification`).
+
+Gate 13 proves all of it is actually present and parses, both in `frontdesk verify` and `frontdesk check --target`.
+
+The one exception is this repo's own demo install: `clientConfig.demo: true` (set on `clients/demo-plumbing/config.json` only) makes every page noindex except `/about-this-demo`, which stays indexable, because the rest of the site is a fictional business and has no business ranking anywhere. A real client's config leaves `demo` unset (or `false`) and indexes normally.
 
 ## Architecture
 
@@ -169,15 +208,18 @@ The phone path is built for Twilio, the provider this kind of install normally u
 Next.js App Router, TypeScript strict, npm workspaces, Supabase (Postgres, Auth, RLS, migrations), Cloudflare Workers, Twilio Voice, ElevenLabs Agents, Resend, GitHub Actions. The CLI is TypeScript on commander, run as `npm run frontdesk -- <command>`.
 
 ```
-apps/web/               site, /dashboard, API routes
-packages/cli/           the frontdesk CLI
-packages/config/        env contract, client config schema, vendor API clients
+apps/web/               site, /dashboard, API routes, sitemap.ts, robots.ts
+packages/cli/           the frontdesk CLI (init, provision, verify, check, doctor)
+packages/config/        env contract, client config schema, SEO, target config, vendor API clients
 workers/llm-gateway/    only holder of the LLM key; providers: mock, gemini, openai
 workers/media-gate/     HMAC-signed expiring URLs (built and tested, not yet wired to a UI)
 clients/demo-plumbing/  the live demo's content
 clients/_template/      blank client for new installs
+examples/               target-config.example.json, for `frontdesk check`
+scripts/                demo.ts, simulate-call.ts, secret-scan.ts, voice-noise-test.ts
 supabase/migrations/    schema, RLS, rate limits
 .github/workflows/      ci.yml, deploy.yml
+.github/ISSUE_TEMPLATE/ bug_report.md, feature_request.md
 docs/                   RESEARCH.md, DESIGN_NOTES.md, RUNBOOK.md, ENV_CONTRACT.md, FALLBACK_TWIML.md
 ```
 
@@ -202,15 +244,33 @@ That's the whole loop, ten commands, two of which are edits. The parts that can'
 
 ## Local development
 
+No external accounts needed - starts a local Supabase instance (needs Docker running), the mock LLM provider, and the web app with seeded demo data:
+
 ```powershell
 npm install
+npm run demo
+```
+
+Then open http://localhost:3000. What's on: the website, the chat assistant (mock provider - deterministic FAQ-matched answers, not a real LLM call), the dashboard, and `npm run frontdesk -- verify --client demo-plumbing` (vendor-gated gates report SKIPPED instead of FAIL, same as any install missing those credentials). What's off: voice ("Talk to the receptionist" explains what it needs instead of failing), real Twilio/Resend/ElevenLabs.
+
+Read-only demo dashboard login (cannot change anything - see below):
+
+```
+viewer@demo.local / ViewOnly-Demo-2026!
+```
+
+This account has the `viewer` role in `tenant_members`. Every table's row-level security policy only grants `select` to authenticated members regardless of role - there is no `insert`/`update`/`delete` policy for the authenticated role on any table, only for the service role used by server routes - so a viewer (or any signed-in member) is already unable to write at the database level, not just hidden from write buttons in the UI. `packages/cli/src/commands/verify.ts`'s RLS gate proves cross-tenant isolation the same way; the local Supabase instance started by `npm run demo` can be used to confirm a viewer-role session specifically gets rejected on a write, by attempting one directly against the local API with the viewer's session token.
+
+To run against a real deployment instead of demo mode, copy `.env.example` to `.env.local` at the repo root and fill in real values:
+
+```powershell
 npm run dev -w apps/web        # http://localhost:3000, client from .env.local's CLIENT_ID
 npm test                       # vitest, vendor APIs mocked
 npm run typecheck
 npm run lint
 ```
 
-One `.env.local` at the repo root holds every credential and is never committed. `docs/ENV_CONTRACT.md` lists all of them and which are optional. The deployed demo's `TWILIO_AUTH_TOKEN` is a random value I generated, not a real Twilio credential, and it's never printed or committed. It's real enough to sign and verify requests against, which is what lets the phone webhook's signature check be tested end to end without a Twilio account.
+`.env.local` is never committed. `docs/ENV_CONTRACT.md` lists every variable and which are optional. The deployed demo's `TWILIO_AUTH_TOKEN` is a random value I generated, not a real Twilio credential, and it's never printed or committed. It's real enough to sign and verify requests against, which is what lets the phone webhook's signature check be tested end to end without a Twilio account.
 
 ## What's actually been run, and what hasn't
 
@@ -245,3 +305,11 @@ The wiring follows specific findings in `docs/RESEARCH.md`, not habit: the discl
 - The live phone call test (`docs/RUNBOOK.md` section 8), once a Twilio account exists.
 
 Everything the deploy pipeline needs is already set up, so nothing is blocking a push to `main` from deploying.
+
+## Contributing
+
+See `CONTRIBUTING.md` for running it locally, adding a check, and adding a client. `CODE_OF_CONDUCT.md` applies to all project spaces. Bug and feature issue templates, and a pull request template, are under `.github/`.
+
+## License
+
+MIT - see `LICENSE`. Copyright Muhammad Arsal Murad.
