@@ -291,6 +291,8 @@ Tested against the live install, not just written and assumed to work:
 - Chat, phone webhook, and browser voice rate limits, all against the real deployed limits
 - CI (typecheck, lint, test, build, secret scan) and the deploy pipeline (Vercel and both workers), both green on GitHub Actions
 - `frontdesk provision`'s database, Vercel, and worker steps, against the real project and the real deployment
+- `frontdesk check --target` against the live deployed site, standalone
+- `npm run demo` end to end: local Supabase, the local mock LLM gateway, the viewer login, and voice correctly reporting itself disabled. Chat responses in this mode are correct but noticeably slow (15-20s) against the local mock gateway for reasons not yet root-caused - see `docs/DESIGN_NOTES.md`.
 
 Built to the vendor docs but not run live, because they need things I don't have:
 

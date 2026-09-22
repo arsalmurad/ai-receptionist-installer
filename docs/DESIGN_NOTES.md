@@ -456,3 +456,64 @@ that `VERIFY_TOKEN` (above) takes all of `frontdesk verify`'s own chat
 traffic off this budget entirely, the full 18 is available to real
 visitors - unlike round 3, where verify itself was one of the things
 competing for it.
+
+## Round 5: getting npm run demo to actually run, not just typecheck
+
+`scripts/demo.ts` typechecked and looked correct on the first pass, but
+three real bugs only surfaced by actually running it end to end (Windows,
+Docker Desktop, local Supabase - none of which a type checker can see):
+
+**`execFileSync`/`spawn` with `"npx"`/`"npm"` fails differently depending on
+how you try to fix it, on Windows.** Calling them by bare name without a
+shell fails with `ENOENT` (Windows can't directly exec a `.cmd` shim). The
+"obvious" fix - call `"npx.cmd"` directly instead - fails a different way,
+`EINVAL`, because a `.cmd` file still needs the shell to interpret it; Node
+can locate it but not execute it standalone. The actual fix is `shell:
+true`, kept only for `npx`/`npm` invocations (not `docker`, which is a real
+`.exe` and doesn't need it) - Node warns this is unsafe with an args array
+(unescaped concatenation), which is a real concern with untrusted input,
+but not here: every argument passed this way is a literal string this
+script controls, never anything from a request or a file.
+
+**A required env var is not safe to blank out.** The first working version
+set `SUPABASE_PROJECT_REF` to `""` for demo mode, since the CLI is the only
+thing that reads it. But `packages/config/src/env.ts` requires it
+(`z.string().min(1)`) for the whole app, not just the CLI's use of it, so
+the Next.js server crashed at startup with an env validation error the
+instant demo mode's env diverged from a real `.env.local`. Fixed with a
+placeholder value (`"local-demo"`) instead of blanking it - satisfies the
+schema, still obviously fake, still never touches a real Supabase project.
+
+**Deleting an env var is not the same as setting it to `""`, and which one
+is correct depends on the specific variable.** Demo mode needs
+ELEVENLABS/TWILIO/RESEND to be off regardless of what a real `.env.local`
+on the same machine contains. `apps/web/scripts/with-root-env.ts`'s
+`process.loadEnvFile()` never overrides a variable that is already set -
+including set to `""` - but it does fill in one that is genuinely absent.
+So the fix has to be "set to `""`", not "delete", for that guarantee to
+hold - confirmed by first trying delete, which let a real `.env.local`
+silently turn voice back on in demo mode, defeating the entire point.
+`MEDIA_GATE_URL`/`MEDIA_GATE_SIGNING_SECRET` can't take the same fix
+though: they have their own format validators (`.url()`, `.min(16)`) that
+reject an empty string even though the field itself is optional, so they
+have to be deleted, which reopens the same gap for those two specifically.
+Accepted rather than solved further - media-gate has no UI wired to it yet
+(see the README), so this cannot change anything a demo mode user actually
+sees or does.
+
+**Open, not yet root-caused:** chat replies in demo mode take 15-20 seconds
+even against the mock provider (a synchronous, no-network function), well
+past `wrangler dev`'s expected cold-start cost, and it did not improve on a
+second request. The response is correct every time, just slow. Likely
+something about this specific sandboxed environment's loopback networking
+between the Next.js dev server and `wrangler dev`'s local server, not a
+code bug - `runMockProvider` itself has no way to take 15 seconds. Left
+open rather than guessed at further.
+
+**Also found: local Docker Desktop can end up in a state where `docker
+info` succeeds but every container operation returns a 500 from the
+daemon API.** A full Docker Desktop process kill-and-relaunch did not fix
+it; `wsl --shutdown` (Docker Desktop's Linux backend runs under WSL2) plus
+a relaunch did. Unrelated to this project's code, but worth knowing if
+`npm run demo` mysteriously can't reach Docker at all even though `docker
+info` looks fine.

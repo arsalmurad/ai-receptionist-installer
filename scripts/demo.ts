@@ -19,6 +19,16 @@ const DEMO_VIEWER_PASSWORD = "ViewOnly-Demo-2026!";
 const LOCAL_GATEWAY_SECRET = "local-dev-shared-secret-do-not-use-in-prod";
 const LOCAL_VERIFY_TOKEN = "local-dev-verify-token-not-a-real-secret";
 
+// npx/npm on Windows are .cmd shims, not .exe files. Spawning a .cmd
+// directly (even by its full name) fails with EINVAL without a shell - a
+// known Node/Windows quirk - so shell: true is required here, unlike for
+// docker.exe. Node warns this is unsafe with an args array (unescaped
+// concatenation); safe in practice since every argument below is a static
+// string this script controls, never external input.
+const NPX = "npx";
+const NPM = "npm";
+const SHELL = process.platform === "win32";
+
 interface SupabaseStatus {
   API_URL: string;
   ANON_KEY: string;
@@ -38,14 +48,25 @@ function checkDockerRunning(): void {
 function startSupabase(): SupabaseStatus {
   console.log("Starting local Supabase (first run pulls Docker images - can take a few minutes)...");
   try {
-    execFileSync("npx", ["supabase", "start"], { cwd: REPO_ROOT, stdio: "inherit" });
+    execFileSync(NPX, ["supabase", "start"], { cwd: REPO_ROOT, stdio: "inherit", shell: SHELL });
   } catch {
-    // Already running - `supabase start` exits non-zero in that case but
-    // the stack is still up, so keep going rather than failing the whole
-    // script over an idempotent no-op.
+    // A non-zero exit here has two very different causes: "already
+    // running" (harmless - the stack is still up) or a genuine startup
+    // failure, e.g. a slow first boot's health checks timing out (which
+    // also tears the containers back down). The status call below is what
+    // actually tells the two apart, so this alone must not be fatal.
   }
 
-  const raw = execFileSync("npx", ["supabase", "status", "-o", "env"], { cwd: REPO_ROOT, encoding: "utf-8" });
+  let raw: string;
+  try {
+    raw = execFileSync(NPX, ["supabase", "status", "-o", "env"], { cwd: REPO_ROOT, encoding: "utf-8", shell: SHELL });
+  } catch (error) {
+    console.error("\nLocal Supabase did not come up. This can happen on a slow first boot - Docker health checks");
+    console.error("timing out under load, especially right after starting Docker Desktop. Try `npm run demo` again;");
+    console.error("if it keeps happening, run `npx supabase start` directly to see the full error.");
+    console.error((error as Error).message);
+    process.exit(1);
+  }
   const values: Record<string, string> = {};
   for (const line of raw.split("\n")) {
     const match = line.match(/^([A-Z_]+)="?([^"]*)"?$/);
@@ -97,7 +118,7 @@ async function ensureViewerAccount(status: SupabaseStatus): Promise<void> {
 }
 
 function runChild(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): ReturnType<typeof spawn> {
-  return spawn(command, args, { cwd, env, stdio: "inherit", shell: process.platform === "win32" });
+  return spawn(command, args, { cwd, env, stdio: "inherit", shell: SHELL });
 }
 
 async function main() {
@@ -115,12 +136,19 @@ async function main() {
     LLM_GATEWAY_SHARED_SECRET: LOCAL_GATEWAY_SECRET,
     VERIFY_TOKEN: LOCAL_VERIFY_TOKEN,
     NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
+    // Required by the app's env schema (packages/config/src/env.ts) even
+    // though nothing at runtime actually reads it - only the CLI's
+    // `supabase db push` step does, which demo mode never calls. A
+    // placeholder satisfies validation without claiming a real project.
+    SUPABASE_PROJECT_REF: "local-demo",
     // Demo mode must behave the same whether or not a real .env.local
-    // happens to exist alongside it (process.loadEnvFile in
-    // with-root-env.ts does not override already-set variables, but it
-    // does fill in ones left unset) - blank out every vendor integration
-    // explicitly so voice, Twilio, Resend, and media-gate are always off,
-    // never silently on because of leftover real credentials on disk.
+    // happens to exist alongside it. with-root-env.ts's
+    // process.loadEnvFile() never overrides a variable that is already
+    // set - including set to an empty string - but it DOES fill in one
+    // that is genuinely absent from the child's env. So these must be set
+    // to "" here, not deleted, or a real .env.local would silently turn
+    // them back on. Boolean("") is false, same as Boolean(undefined), so
+    // computeFeatureFlags() still reports every one of these off.
     ELEVENLABS_API_KEY: "",
     ELEVENLABS_AGENT_ID: "",
     TWILIO_ACCOUNT_SID: "",
@@ -128,14 +156,23 @@ async function main() {
     TWILIO_PHONE_NUMBER_SID: "",
     RESEND_API_KEY: "",
     RESEND_FROM_DOMAIN: "",
-    MEDIA_GATE_URL: "",
-    MEDIA_GATE_SIGNING_SECRET: "",
-    SUPABASE_PROJECT_REF: "",
-    SUPABASE_DB_PASSWORD: "",
   };
 
+  // MEDIA_GATE_URL and MEDIA_GATE_SIGNING_SECRET can't follow the same "set
+  // to empty string" approach above - they have their own format
+  // validators (.url(), .min(16)) that reject an empty string even though
+  // the field itself is optional, so they must be genuinely deleted
+  // instead. That reopens the loadEnvFile gap described above for these
+  // two specifically: if a real .env.local sets them, media-gate could end
+  // up "on" in demo mode. Accepted as a known, low-impact gap - media-gate
+  // has no UI wired to it yet (see README), so this cannot change what a
+  // demo mode user actually sees or does.
+  delete sharedEnv.MEDIA_GATE_URL;
+  delete sharedEnv.MEDIA_GATE_SIGNING_SECRET;
+  delete sharedEnv.SUPABASE_DB_PASSWORD;
+
   console.log("\nStarting the mock LLM gateway (workers/llm-gateway, local, no Cloudflare account)...");
-  const gateway = runChild("npx", ["wrangler", "dev", "--port", "8787"], resolve(REPO_ROOT, "workers/llm-gateway"), sharedEnv);
+  const gateway = runChild(NPX, ["wrangler", "dev", "--port", "8787"], resolve(REPO_ROOT, "workers/llm-gateway"), sharedEnv);
 
   console.log("Starting the web app (http://localhost:3000)...\n");
   console.log(`Owner dashboard login is created on first "frontdesk provision" - in demo mode, use the viewer login instead:`);
@@ -144,7 +181,7 @@ async function main() {
   console.log("\nVoice (\"Talk to the receptionist\") is disabled in demo mode - it needs a real ElevenLabs agent.");
   console.log("Chat, the dashboard, and `npm run frontdesk -- verify --client demo-plumbing` all work.\n");
 
-  const web = runChild("npm", ["run", "dev", "-w", "apps/web"], REPO_ROOT, sharedEnv);
+  const web = runChild(NPM, ["run", "dev", "-w", "apps/web"], REPO_ROOT, sharedEnv);
 
   const shutdown = () => {
     gateway.kill();
