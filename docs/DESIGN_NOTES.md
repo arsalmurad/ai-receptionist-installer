@@ -501,14 +501,24 @@ Accepted rather than solved further - media-gate has no UI wired to it yet
 (see the README), so this cannot change anything a demo mode user actually
 sees or does.
 
-**Open, not yet root-caused:** chat replies in demo mode take 15-20 seconds
-even against the mock provider (a synchronous, no-network function), well
-past `wrangler dev`'s expected cold-start cost, and it did not improve on a
-second request. The response is correct every time, just slow. Likely
-something about this specific sandboxed environment's loopback networking
-between the Next.js dev server and `wrangler dev`'s local server, not a
-code bug - `runMockProvider` itself has no way to take 15 seconds. Left
-open rather than guessed at further.
+**Resolved - could not reproduce.** A prior session recorded chat replies in
+demo mode taking 15-20 seconds even against the mock provider, and left it
+open as unexplained. Re-tested directly against a freshly started `npm run
+demo` stack, three independent ways: `curl` straight to the `llm-gateway`
+worker (`~18ms`), `curl` straight to `/api/chat/message` on the Next.js dev
+server with a real consent/session (five runs, `135ms`-`311ms`, including a
+cold first hit), and the real chat widget in an actual browser, read back
+via `performance.getEntriesByType('resource')` rather than eyeballed
+(`299.5ms`, then `381.1ms` on a second message). All three came back well
+under half a second, every time. The most likely explanation is that the
+original 15-20s figure was measured by watching wall-clock time across
+several manual/tool-driven steps rather than isolating the network request
+itself - exactly the mistake a first pass at re-measuring it here almost
+repeated, before switching to the browser's own resource-timing entries.
+Not ruling out that the prior session's Docker/WSL2 state (see below) was
+briefly degraded in a way `docker info` didn't surface, but there's nothing
+left to fix in the code - `runMockProvider` and the request path both
+measure fast now.
 
 **Also found: local Docker Desktop can end up in a state where `docker
 info` succeeds but every container operation returns a 500 from the
