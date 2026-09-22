@@ -170,32 +170,25 @@ flowchart TD
     B[Website chat]
     C[Browser voice demo]
     D[Business owner]
-
     E[Voice route]
     F[Chat route]
     G[Voice session route]
     H[Dashboard]
-
-    I[(Database)]
+    I[Database]
     J[ElevenLabs agent]
     K[Chat AI worker]
     L[Email alerts]
-
     A --> E
     B --> F
     C --> G
     D --> H
-
     E --> J
     E --> I
     E --> L
-
     F --> K
     F --> I
     F --> L
-
     G --> J
-
     H --> I
 ```
 
